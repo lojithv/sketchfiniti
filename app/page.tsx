@@ -1,113 +1,202 @@
-import Image from 'next/image'
+"use client"
 
-export default function Home() {
+import Navbar from "@/components/Navbar";
+import { ToolStateStore } from "@/store/Tools";
+import ColorPicker from "@/widgets/ColorPicker";
+import {
+  TooltipTrigger,
+  ActionButton,
+  Tooltip,
+  View,
+  ProgressBar,
+  Flex,
+  Provider,
+  defaultTheme,
+  Button,
+  ActionGroup,
+  Item,
+  Text,
+  Header,
+  Divider,
+} from "@adobe/react-spectrum";
+import Brush from "@spectrum-icons/workflow/Brush";
+import Edit from "@spectrum-icons/workflow/Edit";
+import Erase from "@spectrum-icons/workflow/Erase";
+import Hand from "@spectrum-icons/workflow/Hand";
+import Move from "@spectrum-icons/workflow/Move";
+import { KonvaEventObject } from "konva/lib/Node";
+import React, { MouseEvent, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
+import { Stage, Layer, Line, Rect, Circle, Group } from "react-konva";
+
+const App = () => {
+  const [tool, setTool] = React.useState("pan");
+  const [isDrawing, setIsDrawing] = useState(false);
+
+  const handleToolChange = (toolName: string) => {
+    console.log(toolName);
+    if (toolName === "pan") {
+      setIsDrawing(false);
+    }
+    setTool(toolName);
+  };
+
+  const [lines, setLines] = useState<any[]>([]);
+  const [scale, setScale] = useState(1);
+  const stageRef = useRef<any>(null);
+  const layerRef = useRef<any>(null);
+
+  const [color, setColor] = useState<string>("");
+
+  // const groupRef = useRef<any>(null);
+
+  ToolStateStore.colorChange$?.subscribe((c) => {
+    setColor(c);
+  });
+
+  const handleMouseDown = () => {
+    if (tool === "brush" || tool === "eraser") {
+      setIsDrawing(true);
+    }
+    const pos = layerRef.current.getRelativePointerPosition();
+    setLines([...lines, { tool, points: [pos.x, pos.y], color: color }]);
+  };
+
+  const handleMouseMove = () => {
+    if (!isDrawing) {
+      return;
+    }
+    if (tool === "brush" || tool === "eraser") {
+      const point = layerRef.current.getRelativePointerPosition();
+      let lastLine = lines[lines.length - 1];
+      if (lastLine) {
+        // add point
+        lastLine.points = lastLine.points.concat([point.x, point.y]);
+
+        // replace last
+        lines.splice(lines.length - 1, 1, lastLine);
+        setLines(lines.concat());
+      }
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDrawing(false);
+  };
+
+  const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+
+    const stage = stageRef.current;
+    const oldScale = scale;
+    const pointer = stage.getPointerPosition();
+
+    let zoomAmount = e.evt.deltaY > 0 ? 1.1 : 1 / 1.1;
+    let newScale = oldScale * zoomAmount;
+
+    setScale(newScale);
+
+    const mousePointTo = {
+      x: (pointer.x - stage.x()) / oldScale,
+      y: (pointer.y - stage.y()) / oldScale,
+    };
+
+    const newZoom = {
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale,
+    };
+
+    stage.scale({ x: newScale, y: newScale });
+    stage.position(newZoom);
+    stage.batchDraw();
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+    <div
+      className="w-screen h-screen relative "
+    >
+      <div
+        className="h-[50px] absolute w-full"
+      >
+        <Navbar />
+      </div>
+
+      <div style={{ position: "absolute", zIndex: 20, top: "50px" }}>
+        <Provider theme={defaultTheme}>
+          <View backgroundColor="gray-50" padding="size-50">
+            <Flex direction={"column"} gap={"size-100"}>
+              <ActionGroup
+                orientation="vertical"
+                isEmphasized
+                selectionMode="single"
+                onAction={(key: any) => handleToolChange(key.toString())}
+                selectedKeys={[tool]}
+                buttonLabelBehavior="hide"
+              >
+                <Item key="pan">
+                  <Hand />
+                  <Text>Pan</Text>
+                </Item>
+                <Item key="brush" aria-label="Brush">
+                  <Brush />
+                  <Text>Brush</Text>
+                </Item>
+                <Item key="eraser" aria-label="Brush">
+                  <Erase />
+                  <Text>Eraser</Text>
+                </Item>
+              </ActionGroup>
+
+              <ColorPicker />
+            </Flex>
+          </View>
+        </Provider>
+      </div>
+
+      <Stage
+        width={window.innerWidth}
+        height={window.innerHeight}
+        onMouseDown={handleMouseDown}
+        onMousemove={handleMouseMove}
+        onMouseup={handleMouseUp}
+        onWheel={handleWheel}
+        ref={stageRef}
+        scaleX={scale}
+        scaleY={scale}
+        className="stage"
+        draggable={tool === "pan" ? true : false}
+      >
+        <Layer
+          ref={layerRef}
+          width={window.innerWidth}
+          height={window.innerHeight}
+        >
+          {/* <Rect
+            x={50}
+            y={50}
+            width={100}
+            height={100}
+            fill="red"
+            draggable={true}
+          /> */}
+          {lines.map((line, i) => (
+            <Line
+              key={i}
+              points={line.points}
+              stroke={line.color}
+              strokeWidth={line.tool === "eraser" ? 20 : 5}
+              tension={0.5}
+              lineCap="round"
+              lineJoin="round"
+              globalCompositeOperation={
+                line.tool === "eraser" ? "destination-out" : "source-over"
+              }
             />
-          </a>
-        </div>
-      </div>
+          ))}
+        </Layer>
+      </Stage>
+    </div>
+  );
+};
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
-}
+export default App;
