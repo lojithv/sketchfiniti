@@ -3,6 +3,7 @@
 import Navbar from "@/components/Navbar";
 import { ToolStateStore } from "@/store/Tools";
 import ColorPicker from "@/widgets/ColorPicker";
+import Toolbar from "@/widgets/Toolbar";
 import {
   TooltipTrigger,
   ActionButton,
@@ -55,6 +56,7 @@ const App = () => {
   });
 
   const handleMouseDown = () => {
+    console.log("test")
     if (tool === "brush" || tool === "eraser") {
       setIsDrawing(true);
     }
@@ -111,47 +113,36 @@ const App = () => {
     stage.batchDraw();
   };
 
+  const handleExport = () => {
+    const uri = stageRef.current.toDataURL();
+    console.log(uri);
+    // we also can save uri as file
+    // but in the demo on Konva website it will not work
+    // because of iframe restrictions
+    // but feel free to use it in your apps:
+    downloadURI(uri, 'stage.png');
+  };
+
+  function downloadURI(uri: string, name: string) {
+    var link = document.createElement('a');
+    link.download = name;
+    link.href = uri;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <div
       className="w-screen h-screen relative "
     >
       <div
-        className="h-[50px] absolute w-full"
+        className="h-[50px] absolute w-full z-20"
       >
-        <Navbar />
+        <Navbar handleExport={handleExport} />
       </div>
 
-      <div style={{ position: "absolute", zIndex: 20, top: "50px" }}>
-        <Provider theme={defaultTheme}>
-          <View backgroundColor="gray-50" padding="size-50">
-            <Flex direction={"column"} gap={"size-100"}>
-              <ActionGroup
-                orientation="vertical"
-                isEmphasized
-                selectionMode="single"
-                onAction={(key: any) => handleToolChange(key.toString())}
-                selectedKeys={[tool]}
-                buttonLabelBehavior="hide"
-              >
-                <Item key="pan">
-                  <Hand />
-                  <Text>Pan</Text>
-                </Item>
-                <Item key="brush" aria-label="Brush">
-                  <Brush />
-                  <Text>Brush</Text>
-                </Item>
-                <Item key="eraser" aria-label="Brush">
-                  <Erase />
-                  <Text>Eraser</Text>
-                </Item>
-              </ActionGroup>
-
-              <ColorPicker />
-            </Flex>
-          </View>
-        </Provider>
-      </div>
+      <Toolbar tool={tool} handleToolChange={handleToolChange} />
 
       <Stage
         width={window.innerWidth}
@@ -160,6 +151,9 @@ const App = () => {
         onMousemove={handleMouseMove}
         onMouseup={handleMouseUp}
         onWheel={handleWheel}
+        onTouchStart={handleMouseDown}
+        onTouchMove={handleMouseMove}
+        onTouchEnd={handleMouseUp}
         ref={stageRef}
         scaleX={scale}
         scaleY={scale}
@@ -168,8 +162,6 @@ const App = () => {
       >
         <Layer
           ref={layerRef}
-          width={window.innerWidth}
-          height={window.innerHeight}
         >
           {/* <Rect
             x={50}

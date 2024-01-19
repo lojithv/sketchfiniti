@@ -1,3 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.stage {
+  background-color: rgb(68, 68, 68);
+}

@@ -1,3 +1,4 @@
+"use client"
 import { ColorArea, ColorSlider } from "@react-spectrum/color";
 import { Flex } from "@react-spectrum/layout";
 import { Label } from "@react-spectrum/label";
