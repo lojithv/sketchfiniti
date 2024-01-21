@@ -30,8 +30,6 @@ import React, { MouseEvent, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Stage, Layer, Line, Rect, Circle, Group } from "react-konva";
 
-import CustomCursor from 'custom-cursor-react';
-import 'custom-cursor-react/dist/index.css';
 import Konva from "konva";
 
 const App = () => {
@@ -189,18 +187,6 @@ const App = () => {
       </div>
 
       <Toolbar tool={tool} handleToolChange={handleToolChange} />
-      {/* <CustomCursor
-        targets={['.link', '.your-css-selector']}
-        customClass='custom-cursor'
-        dimensions={30}
-        fill={color}
-        smoothness={{
-          movement: 0.2,
-          scale: 0.1,
-          opacity: 0.2,
-        }}
-        targetOpacity={0.5}
-      /> */}
       <Stage
         width={window.innerWidth}
         height={window.innerHeight}
