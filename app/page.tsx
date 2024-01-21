@@ -68,7 +68,7 @@ const App = () => {
     setLines([...lines, { tool, points: [pos.x, pos.y], color: color }]);
     const newLine = new Konva.Line({
       stroke: color,
-      strokeWidth: 5 * (e.evt.pressure),
+      strokeWidth: 5,
       globalCompositeOperation:
         tool === 'brush' ? 'source-over' : 'destination-out',
       // round cap for smoother lines
@@ -115,7 +115,7 @@ const App = () => {
         let lastLineRefCopy = lastLineRef;
         const newPoints = lastLineRefCopy.points().concat([point.x, point.y]);
         lastLineRefCopy.points(newPoints);
-        lastLineRefCopy.strokeWidth(5 * (e.evt.pressure));
+        lastLineRefCopy.strokeWidth(5);
         // replace last
         lines.splice(lines.length - 1, 1, lastLine);
         setLines(lines.concat());
