@@ -37,7 +37,6 @@ const App = () => {
   const [isDrawing, setIsDrawing] = useState(false);
 
   const handleToolChange = (toolName: string) => {
-    console.log(toolName);
     if (toolName === "pan") {
       setIsDrawing(false);
     }
@@ -64,7 +63,6 @@ const App = () => {
   });
 
   const handleMouseDown = () => {
-    console.log("test")
     if (tool === "brush" || tool === "eraser") {
       setIsDrawing(true);
     }
@@ -117,7 +115,6 @@ const App = () => {
         lines.splice(lines.length - 1, 1, lastLine);
         setLines(lines.concat());
         setLastLineRef(lastLineRefCopy);
-        console.log(lines)
       }
     }
   };
@@ -155,7 +152,6 @@ const App = () => {
 
   const handleExport = () => {
     const uri = stageRef.current.toDataURL();
-    console.log(uri);
     // we also can save uri as file
     // but in the demo on Konva website it will not work
     // because of iframe restrictions
@@ -216,20 +212,7 @@ const App = () => {
             fill="red"
             draggable={true}
           /> */}
-          {/* {lines.map((line, i) => (
-            <Line
-              key={i}
-              points={line.points}
-              stroke={line.color}
-              strokeWidth={line.tool === "eraser" ? 20 : 5}
-              tension={0.5}
-              lineCap="round"
-              lineJoin="round"
-              globalCompositeOperation={
-                line.tool === "eraser" ? "destination-out" : "source-over"
-              }
-            />
-          ))} */}
+
         </Layer>
       </Stage>
     </div>
