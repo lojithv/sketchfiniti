@@ -55,15 +55,12 @@ const App = () => {
 
   // const groupRef = useRef<any>(null);
 
-  useEffect(() => {
-
-  }, []);
-
   ToolStateStore.colorChange$?.subscribe((c) => {
     setColor(c);
   });
 
-  const handleMouseDown = () => {
+  const handleMouseDown = (e: any) => {
+
     if (tool === "brush" || tool === "eraser") {
       setIsDrawing(true);
     }
@@ -99,10 +96,16 @@ const App = () => {
     layerRef.current.add(newLine);
   }
 
-  const handleMouseMove = () => {
+  const handleMouseMove = (e: any) => {
+    // console.log(e.evt.pressure)
+    console.log("move")
     if (!isDrawing) {
       return;
     }
+    // console.log(e)
+    console.log(e.evt.pressure)
+
+
     if (tool === "brush" || tool === "eraser") {
       const point = layerRef.current.getRelativePointerPosition();
       let lastLine = lines[lines.length - 1];
@@ -112,6 +115,7 @@ const App = () => {
         let lastLineRefCopy = lastLineRef;
         const newPoints = lastLineRefCopy.points().concat([point.x, point.y]);
         lastLineRefCopy.points(newPoints);
+        lastLineRefCopy.strokeWidth(5);
         // replace last
         lines.splice(lines.length - 1, 1, lastLine);
         setLines(lines.concat());
@@ -190,6 +194,26 @@ const App = () => {
     }
   }
 
+  // useEffect(() => {
+  //   function logPressure(ev: any) {
+  //     console.log(ev.pressure)
+  //     // console.log(ev.pointerType)
+  //     // console.log(ev.type)
+  //     // if (isDrawing) {
+  //     //   if (ev.type === 'pointerdown') {
+
+  //     //     handleMouseDown(ev);
+
+  //     //   } else {
+  //     //     handleMouseMove(ev);
+  //     //   }
+  //     // }
+  //   }
+
+  //   document.addEventListener('pointerdown', logPressure, false);
+  //   document.addEventListener('pointermove', logPressure, false);
+  // }, []);
+
   return (
     <div
       className="w-screen h-screen relative "
@@ -206,14 +230,15 @@ const App = () => {
         width={window.innerWidth}
         height={window.innerHeight}
         onMouseEnter={() => changeCursor('crosshair')}
-        onMouseDown={handleMouseDown}
-        onMousemove={handleMouseMove}
+        onPointerDown={handleMouseDown}
+        onPointerMove={handleMouseMove}
         onMouseup={handleMouseUp}
         onWheel={handleWheel}
-        onTouchStart={handleMouseDown}
-        onTouchMove={handleMouseMove}
+        // onTouchStart={handleMouseDown}
+        // onTouchMove={handleMouseMove}
         onTouchEnd={handleMouseUp}
         ref={stageRef}
+
         scaleX={scale}
         scaleY={scale}
         className="stage"

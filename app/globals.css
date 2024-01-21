@@ -5,6 +5,7 @@
 .stage {
   background-color: rgb(68, 68, 68);
   cursor: none;
+  touch-action: none;
 }
 
 .layer {
