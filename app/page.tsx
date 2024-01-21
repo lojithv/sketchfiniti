@@ -31,6 +31,7 @@ import { createRoot } from "react-dom/client";
 import { Stage, Layer, Line, Rect, Circle, Group } from "react-konva";
 
 import Konva from "konva";
+import ActionsPanel from "@/widgets/ActionsPanel";
 
 const App = () => {
   const [tool, setTool] = React.useState("pan");
@@ -172,6 +173,23 @@ const App = () => {
     stageRef.current.container().style.cursor = cursor;
   }
 
+  const handleAction = (action: string) => {
+    switch (action) {
+      case 'undo':
+        break;
+      case 'redo':
+        break;
+      case 'clear':
+        layerRef.current.destroyChildren();
+        break;
+      case 'save':
+        break;
+      case 'export':
+        handleExport();
+        break;
+    }
+  }
+
   return (
     <div
       className="w-screen h-screen relative "
@@ -179,10 +197,11 @@ const App = () => {
       <div
         className="h-[50px] absolute w-full z-20"
       >
-        <Navbar handleExport={handleExport} />
+        <Navbar />
       </div>
 
       <Toolbar tool={tool} handleToolChange={handleToolChange} />
+      <ActionsPanel handleAction={handleAction} />
       <Stage
         width={window.innerWidth}
         height={window.innerHeight}
