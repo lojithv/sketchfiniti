@@ -26,9 +26,13 @@ import Erase from "@spectrum-icons/workflow/Erase";
 import Hand from "@spectrum-icons/workflow/Hand";
 import Move from "@spectrum-icons/workflow/Move";
 import { KonvaEventObject } from "konva/lib/Node";
-import React, { MouseEvent, useRef, useState } from "react";
+import React, { MouseEvent, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Stage, Layer, Line, Rect, Circle, Group } from "react-konva";
+
+import CustomCursor from 'custom-cursor-react';
+import 'custom-cursor-react/dist/index.css';
+import Konva from "konva";
 
 const App = () => {
   const [tool, setTool] = React.useState("pan");
@@ -49,7 +53,13 @@ const App = () => {
 
   const [color, setColor] = useState<string>("");
 
+  const [lastLineRef, setLastLineRef] = useState<any>(null);
+
   // const groupRef = useRef<any>(null);
+
+  useEffect(() => {
+
+  }, []);
 
   ToolStateStore.colorChange$?.subscribe((c) => {
     setColor(c);
@@ -62,7 +72,35 @@ const App = () => {
     }
     const pos = layerRef.current.getRelativePointerPosition();
     setLines([...lines, { tool, points: [pos.x, pos.y], color: color }]);
+    const newLine = new Konva.Line({
+      stroke: color,
+      strokeWidth: 5,
+      globalCompositeOperation:
+        tool === 'brush' ? 'source-over' : 'destination-out',
+      // round cap for smoother lines
+      lineCap: 'round',
+      lineJoin: 'round',
+      // add point twice, so we have some drawings even on a simple click
+      points: [pos.x, pos.y, pos.x, pos.y],
+    });
+    setLastLineRef(newLine);
+    layerRef.current.add(newLine);
   };
+
+  const handleAddLine = (line: any) => {
+    const newLine = new Konva.Line({
+      stroke: line.color,
+      strokeWidth: 5,
+      globalCompositeOperation:
+        tool === line.tool ? 'source-over' : 'destination-out',
+      // round cap for smoother lines
+      lineCap: 'round',
+      lineJoin: 'round',
+      // add point twice, so we have some drawings even on a simple click
+      points: line.points,
+    });
+    layerRef.current.add(newLine);
+  }
 
   const handleMouseMove = () => {
     if (!isDrawing) {
@@ -74,10 +112,14 @@ const App = () => {
       if (lastLine) {
         // add point
         lastLine.points = lastLine.points.concat([point.x, point.y]);
-
+        let lastLineRefCopy = lastLineRef;
+        const newPoints = lastLineRefCopy.points().concat([point.x, point.y]);
+        lastLineRefCopy.points(newPoints);
         // replace last
         lines.splice(lines.length - 1, 1, lastLine);
         setLines(lines.concat());
+        setLastLineRef(lastLineRefCopy);
+        console.log(lines)
       }
     }
   };
@@ -132,6 +174,10 @@ const App = () => {
     document.body.removeChild(link);
   }
 
+  const changeCursor = (cursor: string) => {
+    stageRef.current.container().style.cursor = cursor;
+  }
+
   return (
     <div
       className="w-screen h-screen relative "
@@ -143,10 +189,22 @@ const App = () => {
       </div>
 
       <Toolbar tool={tool} handleToolChange={handleToolChange} />
-
+      {/* <CustomCursor
+        targets={['.link', '.your-css-selector']}
+        customClass='custom-cursor'
+        dimensions={30}
+        fill={color}
+        smoothness={{
+          movement: 0.2,
+          scale: 0.1,
+          opacity: 0.2,
+        }}
+        targetOpacity={0.5}
+      /> */}
       <Stage
         width={window.innerWidth}
         height={window.innerHeight}
+        onMouseEnter={() => changeCursor('crosshair')}
         onMouseDown={handleMouseDown}
         onMousemove={handleMouseMove}
         onMouseup={handleMouseUp}
@@ -162,6 +220,7 @@ const App = () => {
       >
         <Layer
           ref={layerRef}
+          className="layer"
         >
           {/* <Rect
             x={50}
@@ -171,7 +230,7 @@ const App = () => {
             fill="red"
             draggable={true}
           /> */}
-          {lines.map((line, i) => (
+          {/* {lines.map((line, i) => (
             <Line
               key={i}
               points={line.points}
@@ -184,7 +243,7 @@ const App = () => {
                 line.tool === "eraser" ? "destination-out" : "source-over"
               }
             />
-          ))}
+          ))} */}
         </Layer>
       </Stage>
     </div>

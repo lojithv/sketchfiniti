@@ -4,4 +4,9 @@
 
 .stage {
   background-color: rgb(68, 68, 68);
+  cursor: none;
+}
+
+.layer {
+  background-color: rgb(203, 203, 203);
 }
