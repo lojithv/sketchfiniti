@@ -2,33 +2,11 @@
 
 import Navbar from "@/components/Navbar";
 import { ToolStateStore } from "@/store/Tools";
-import ColorPicker from "@/widgets/ColorPicker";
 import Toolbar from "@/widgets/Toolbar";
-import {
-  TooltipTrigger,
-  ActionButton,
-  Tooltip,
-  View,
-  ProgressBar,
-  Flex,
-  Provider,
-  defaultTheme,
-  Button,
-  ActionGroup,
-  Item,
-  Text,
-  Header,
-  Divider,
-} from "@adobe/react-spectrum";
-import Brush from "@spectrum-icons/workflow/Brush";
-import Edit from "@spectrum-icons/workflow/Edit";
-import Erase from "@spectrum-icons/workflow/Erase";
-import Hand from "@spectrum-icons/workflow/Hand";
-import Move from "@spectrum-icons/workflow/Move";
+
 import { KonvaEventObject } from "konva/lib/Node";
-import React, { MouseEvent, useEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
-import { Stage, Layer, Line, Rect, Circle, Group } from "react-konva";
+import React, { MouseEvent, use, useEffect, useRef, useState } from "react";
+import { Stage, Layer } from "react-konva";
 
 import Konva from "konva";
 import ActionsPanel from "@/widgets/ActionsPanel";
@@ -55,9 +33,15 @@ const App = () => {
 
   // const groupRef = useRef<any>(null);
 
-  ToolStateStore.colorChange$?.subscribe((c) => {
-    setColor(c);
-  });
+  useEffect(() => {
+    setListners();
+  }, []);
+
+  const setListners = () => {
+    ToolStateStore.brushStrokeColorChange$?.subscribe((c) => {
+      setColor(c);
+    });
+  };
 
   const handleMouseDown = (e: any) => {
 
@@ -242,6 +226,7 @@ const App = () => {
         scaleX={scale}
         scaleY={scale}
         className="stage"
+        style={{ backgroundColor: ToolStateStore.useCanvasBgColor() }}
         draggable={tool === "pan" ? true : false}
       >
         <Layer

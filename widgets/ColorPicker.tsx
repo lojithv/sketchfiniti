@@ -20,22 +20,37 @@ import {
 } from "@adobe/react-spectrum";
 import { PressEvent } from "@react-types/shared";
 
-function ColorPicker() {
+function ColorPicker({ colorPickerType }: { colorPickerType: string }) {
   let [color, setColor] = React.useState(parseColor("#000000"));
   let [redChannel, greenChannel, blueChannel] = color.getColorChannels();
 
-  const [stateColor, setStateColor] = useState("#000000");
+
+  const updateColorState = () => {
+    if (colorPickerType === "BRUSH_STROKE") {
+      ToolStateStore.setBrushStrokeColor(color.toString("css"));
+    } else if (colorPickerType === "CANVAS_BG") {
+      ToolStateStore.setCanvasBgColor(color.toString("css"));
+    }
+  }
 
   useEffect(() => {
-    ToolStateStore.setColor(color.toString("css"));
+    updateColorState();
   }, []);
 
-  ToolStateStore.colorChange$?.subscribe((c) => {
-    setStateColor(c);
-  });
+  const setListner = () => {
+    if (colorPickerType === "BRUSH_STROKE") {
+      ToolStateStore.brushStrokeColorChange$?.subscribe((c) => {
+        setColor(parseColor(c));
+      });
+    } else if (colorPickerType === "CANVAS_BG") {
+      ToolStateStore.canvasBgColorChange$?.subscribe((c) => {
+        setColor(parseColor(c));
+      });
+    }
+  }
 
   const handleColorChangeEnd = () => {
-    ToolStateStore.setColor(color.toString("css"));
+    updateColorState();
   };
 
   return (
@@ -45,7 +60,7 @@ function ColorPicker() {
           style={{
             width: "100%",
             height: "100%",
-            backgroundColor: stateColor,
+            backgroundColor: color.toString("css"),
             borderRadius: '3px'
           }}
         ></div>

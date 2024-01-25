@@ -11,6 +11,7 @@ import RemoveCircle from '@spectrum-icons/workflow/RemoveCircle'
 import Delete from '@spectrum-icons/workflow/Delete'
 import SaveFloppy from '@spectrum-icons/workflow/SaveFloppy'
 import Export from '@spectrum-icons/workflow/Export'
+import { ColorPickerTypes } from '@/types/ColorPickerTypes'
 
 type Props = {
     handleAction: (action: string) => void
@@ -59,7 +60,7 @@ const ActionsPanel = ({ handleAction }: Props) => {
                             </Item>
                         </ActionGroup>
 
-                        <ColorPicker />
+                        <ColorPicker colorPickerType={ColorPickerTypes.CANVAS_BG} />
                     </Flex>
                 </View>
             </Provider>

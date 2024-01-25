@@ -2,7 +2,11 @@ import { bind } from "@react-rxjs/core";
 import { createSignal } from "@react-rxjs/utils";
 
 export namespace ToolStateStore {
-  export const [colorChange$, setColor] = createSignal<string>();
+  export const [brushStrokeColorChange$, setBrushStrokeColor] = createSignal<string>();
 
-  export const [useColor, color$] = bind(colorChange$, "#ff00ff");
+  export const [useBrushStrokeColor, brushStrokeColor$] = bind(brushStrokeColorChange$, "#ff00ff");
+
+  export const [canvasBgColorChange$, setCanvasBgColor] = createSignal<string>();
+
+  export const [useCanvasBgColor, canvasBgColor$] = bind(canvasBgColorChange$, "#ff00ff");
 }
