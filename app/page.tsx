@@ -37,10 +37,16 @@ const App = () => {
     setListners();
   }, []);
 
+  const brushStrokeWidth = ToolStateStore.useBrushStrokeWidth()
+
+  const eraserStrokeWidth = ToolStateStore.useEraserStrokeWidth()
+
+  const canvasBgColor = ToolStateStore.useCanvasBgColor()
+
+  const brushStrokeColor = ToolStateStore.useBrushStrokeColor();
+
   const setListners = () => {
-    ToolStateStore.brushStrokeColorChange$?.subscribe((c) => {
-      setColor(c);
-    });
+    setColor(brushStrokeColor.toString('css'));
   };
 
   const handleMouseDown = (e: any) => {
@@ -52,7 +58,7 @@ const App = () => {
     setLines([...lines, { tool, points: [pos.x, pos.y], color: color }]);
     const newLine = new Konva.Line({
       stroke: color,
-      strokeWidth: 5,
+      strokeWidth: tool === 'brush' ? brushStrokeWidth : eraserStrokeWidth,
       globalCompositeOperation:
         tool === 'brush' ? 'source-over' : 'destination-out',
       // round cap for smoother lines
@@ -99,7 +105,7 @@ const App = () => {
         let lastLineRefCopy = lastLineRef;
         const newPoints = lastLineRefCopy.points().concat([point.x, point.y]);
         lastLineRefCopy.points(newPoints);
-        lastLineRefCopy.strokeWidth(5);
+        // lastLineRefCopy.strokeWidth(5);
         // replace last
         lines.splice(lines.length - 1, 1, lastLine);
         setLines(lines.concat());
@@ -226,7 +232,7 @@ const App = () => {
         scaleX={scale}
         scaleY={scale}
         className="stage"
-        style={{ backgroundColor: ToolStateStore.useCanvasBgColor() }}
+        style={{ backgroundColor: canvasBgColor.toString('css') }}
         draggable={tool === "pan" ? true : false}
       >
         <Layer

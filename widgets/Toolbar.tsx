@@ -5,6 +5,7 @@ import Hand from '@spectrum-icons/workflow/Hand'
 import React from 'react'
 import ColorPicker from './ColorPicker'
 import { ColorPickerTypes } from '@/types/ColorPickerTypes'
+import ToolConfig from './ToolConfig'
 
 type Props = {
     tool: string,
@@ -38,7 +39,7 @@ const Toolbar = ({ tool, handleToolChange }: Props) => {
                                 <Text>Eraser</Text>
                             </Item>
                         </ActionGroup>
-
+                        <ToolConfig />
                         <ColorPicker colorPickerType={ColorPickerTypes.BRUSH_STROKE} />
                     </Flex>
                 </View>

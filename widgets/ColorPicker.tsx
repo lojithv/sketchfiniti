@@ -19,35 +19,34 @@ import {
   Heading,
   View,
 } from "@adobe/react-spectrum";
-import { PressEvent } from "@react-types/shared";
+import { ColorPickerTypes } from '@/types/ColorPickerTypes';
 
 
 function ColorPicker({ colorPickerType }: { colorPickerType: string }) {
-  let [color, setColor] = React.useState(parseColor('hsba(0, 100%, 50%, 0.5)'));
+  let [color, setColor] = React.useState(parseColor('hsba(0, 100%, 50%, 1)'));
   let [, saturationChannel, brightnessChannel] = color.getColorChannels();
 
 
   const updateColorState = () => {
     if (colorPickerType === "BRUSH_STROKE") {
-      ToolStateStore.setBrushStrokeColor(color.toString("css"));
+      ToolStateStore.setBrushStrokeColor(color);
     } else if (colorPickerType === "CANVAS_BG") {
-      ToolStateStore.setCanvasBgColor(color.toString("css"));
+      ToolStateStore.setCanvasBgColor(color);
     }
   }
 
+  const brushStrokeColor = ToolStateStore.useBrushStrokeColor();
+  const canvasBgColor = ToolStateStore.useCanvasBgColor();
+
   useEffect(() => {
-    updateColorState();
+    setLocalColor();
   }, []);
 
-  const setListner = () => {
-    if (colorPickerType === "BRUSH_STROKE") {
-      ToolStateStore.brushStrokeColorChange$?.subscribe((c) => {
-        setColor(parseColor(c));
-      });
-    } else if (colorPickerType === "CANVAS_BG") {
-      ToolStateStore.canvasBgColorChange$?.subscribe((c) => {
-        setColor(parseColor(c));
-      });
+  const setLocalColor = () => {
+    if (colorPickerType === ColorPickerTypes.BRUSH_STROKE) {
+      setColor(brushStrokeColor);
+    } else if (colorPickerType === ColorPickerTypes.CANVAS_BG) {
+      setColor(canvasBgColor);
     }
   }
 
