@@ -1,5 +1,5 @@
 "use client"
-import { ColorArea, ColorSlider } from "@react-spectrum/color";
+import { ColorArea, ColorSlider, ColorWheel } from '@react-spectrum/color';
 import { Flex } from "@react-spectrum/layout";
 import { Label } from "@react-spectrum/label";
 import { parseColor } from "@react-stately/color";
@@ -14,15 +14,17 @@ import {
   Dialog,
   DialogTrigger,
   Divider,
+  Grid,
   Header,
   Heading,
   View,
 } from "@adobe/react-spectrum";
 import { PressEvent } from "@react-types/shared";
 
+
 function ColorPicker({ colorPickerType }: { colorPickerType: string }) {
-  let [color, setColor] = React.useState(parseColor("#000000"));
-  let [redChannel, greenChannel, blueChannel] = color.getColorChannels();
+  let [color, setColor] = React.useState(parseColor('hsba(0, 100%, 50%, 0.5)'));
+  let [, saturationChannel, brightnessChannel] = color.getColorChannels();
 
 
   const updateColorState = () => {
@@ -72,28 +74,32 @@ function ColorPicker({ colorPickerType }: { colorPickerType: string }) {
           <Divider />
           <Content>
             <fieldset style={{ border: 0 }}>
-              {/* <legend>{color.getColorSpace().toUpperCase()}A Example</legend> */}
-              <Flex direction="column" alignItems={"center"}>
-                <ColorArea
-                  xChannel={redChannel}
-                  yChannel={greenChannel}
-                  value={color}
-                  onChange={setColor}
-                // onChangeEnd={handleColorChangeEnd}
-                />
-                <ColorSlider
-                  channel={blueChannel}
-                  value={color}
-                  onChange={setColor}
-                // onChangeEnd={handleColorChangeEnd}
-                />
-                <ColorSlider
-                  channel="alpha"
-                  value={color}
-                  onChange={setColor}
-                // onChangeEnd={handleColorChangeEnd}
-                />
-                <p>Current value: {color.toString("css")}</p>
+              <legend>HSBA Example</legend>
+              <Flex
+                direction="column">
+                <View
+                  position="relative"
+                  width="size-2400">
+                  <Grid
+                    position="absolute"
+                    justifyContent="center"
+                    alignContent="center"
+                    width="100%"
+                    height="100%">
+                    <ColorArea
+                      xChannel={saturationChannel}
+                      yChannel={brightnessChannel}
+                      value={color}
+                      onChange={setColor}
+                      size="size-1200" />
+                  </Grid>
+                  <ColorWheel
+                    value={color}
+                    onChange={setColor}
+                    size="size-2400" />
+                </View>
+                <ColorSlider channel="alpha" value={color} onChange={setColor} />
+                <p>Current value: {color.toString('hsba')}</p>
               </Flex>
             </fieldset>
           </Content>
