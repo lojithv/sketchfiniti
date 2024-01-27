@@ -2,33 +2,11 @@
 
 import Navbar from "@/components/Navbar";
 import { ToolStateStore } from "@/store/Tools";
-import ColorPicker from "@/widgets/ColorPicker";
 import Toolbar from "@/widgets/Toolbar";
-import {
-  TooltipTrigger,
-  ActionButton,
-  Tooltip,
-  View,
-  ProgressBar,
-  Flex,
-  Provider,
-  defaultTheme,
-  Button,
-  ActionGroup,
-  Item,
-  Text,
-  Header,
-  Divider,
-} from "@adobe/react-spectrum";
-import Brush from "@spectrum-icons/workflow/Brush";
-import Edit from "@spectrum-icons/workflow/Edit";
-import Erase from "@spectrum-icons/workflow/Erase";
-import Hand from "@spectrum-icons/workflow/Hand";
-import Move from "@spectrum-icons/workflow/Move";
+
 import { KonvaEventObject } from "konva/lib/Node";
-import React, { MouseEvent, useEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
-import { Stage, Layer, Line, Rect, Circle, Group } from "react-konva";
+import React, { MouseEvent, use, useEffect, useRef, useState } from "react";
+import { Stage, Layer } from "react-konva";
 
 import Konva from "konva";
 import ActionsPanel from "@/widgets/ActionsPanel";
@@ -55,9 +33,21 @@ const App = () => {
 
   // const groupRef = useRef<any>(null);
 
-  ToolStateStore.colorChange$?.subscribe((c) => {
-    setColor(c);
-  });
+  useEffect(() => {
+    setListners();
+  }, []);
+
+  const brushStrokeWidth = ToolStateStore.useBrushStrokeWidth()
+
+  const eraserStrokeWidth = ToolStateStore.useEraserStrokeWidth()
+
+  const canvasBgColor = ToolStateStore.useCanvasBgColor()
+
+  const brushStrokeColor = ToolStateStore.useBrushStrokeColor();
+
+  const setListners = () => {
+    setColor(brushStrokeColor.toString('css'));
+  };
 
   const handleMouseDown = (e: any) => {
 
@@ -68,7 +58,7 @@ const App = () => {
     setLines([...lines, { tool, points: [pos.x, pos.y], color: color }]);
     const newLine = new Konva.Line({
       stroke: color,
-      strokeWidth: 5,
+      strokeWidth: tool === 'brush' ? brushStrokeWidth : eraserStrokeWidth,
       globalCompositeOperation:
         tool === 'brush' ? 'source-over' : 'destination-out',
       // round cap for smoother lines
@@ -115,7 +105,7 @@ const App = () => {
         let lastLineRefCopy = lastLineRef;
         const newPoints = lastLineRefCopy.points().concat([point.x, point.y]);
         lastLineRefCopy.points(newPoints);
-        lastLineRefCopy.strokeWidth(5);
+        // lastLineRefCopy.strokeWidth(5);
         // replace last
         lines.splice(lines.length - 1, 1, lastLine);
         setLines(lines.concat());
@@ -242,6 +232,7 @@ const App = () => {
         scaleX={scale}
         scaleY={scale}
         className="stage"
+        style={{ backgroundColor: canvasBgColor.toString('css') }}
         draggable={tool === "pan" ? true : false}
       >
         <Layer
