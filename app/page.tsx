@@ -27,15 +27,10 @@ const App = () => {
   const stageRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
 
-  const [color, setColor] = useState<string>("");
-
   const [lastLineRef, setLastLineRef] = useState<any>(null);
 
   // const groupRef = useRef<any>(null);
 
-  useEffect(() => {
-    setListners();
-  }, []);
 
   const brushStrokeWidth = ToolStateStore.useBrushStrokeWidth()
 
@@ -44,10 +39,6 @@ const App = () => {
   const canvasBgColor = ToolStateStore.useCanvasBgColor()
 
   const brushStrokeColor = ToolStateStore.useBrushStrokeColor();
-
-  const setListners = () => {
-    setColor(brushStrokeColor.toString('css'));
-  };
 
   const handleMouseDown = (e: any) => {
 
