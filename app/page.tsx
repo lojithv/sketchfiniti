@@ -5,7 +5,7 @@ import { ToolStateStore } from "@/store/Tools";
 import Toolbar from "@/widgets/Toolbar";
 
 import { KonvaEventObject } from "konva/lib/Node";
-import React, { MouseEvent, use, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Stage, Layer } from "react-konva";
 
 import Konva from "konva";
@@ -55,9 +55,9 @@ const App = () => {
       setIsDrawing(true);
     }
     const pos = layerRef.current.getRelativePointerPosition();
-    setLines([...lines, { tool, points: [pos.x, pos.y], color: color }]);
+    setLines([...lines, { tool, points: [pos.x, pos.y], color: brushStrokeColor.toString('css') }]);
     const newLine = new Konva.Line({
-      stroke: color,
+      stroke: brushStrokeColor.toString('css'),
       strokeWidth: tool === 'brush' ? brushStrokeWidth : eraserStrokeWidth,
       globalCompositeOperation:
         tool === 'brush' ? 'source-over' : 'destination-out',
