@@ -5,7 +5,7 @@ type Props = {
 
 }
 
-const Navbar = ({ }: Props) => {
+const AppNavbar = ({ }: Props) => {
 
     return (
         <nav className='bg-black h-[50px] text-white flex items-center justify-between p-5'>
@@ -15,4 +15,4 @@ const Navbar = ({ }: Props) => {
     );
 };
 
-export default Navbar;
+export default AppNavbar;
