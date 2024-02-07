@@ -14,6 +14,7 @@
     "@react-rxjs/utils": "^0.9.7",
     "@react-spectrum/color": "^3.0.0-beta.30",
     "@spectrum-icons/workflow": "^4.2.8",
+    "firebase": "^10.8.0",
     "konva": "^9.3.0",
     "next": "14.0.4",
     "react": "^18",
