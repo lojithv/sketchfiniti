@@ -6,7 +6,7 @@ import Toolbar from "@/widgets/Toolbar";
 
 import { KonvaEventObject } from "konva/lib/Node";
 import React, { useEffect, useRef, useState } from "react";
-import { Stage, Layer } from "react-konva";
+import { Stage, Layer, Rect } from "react-konva";
 
 import Konva from "konva";
 import ActionsPanel from "@/widgets/ActionsPanel";
@@ -140,12 +140,28 @@ const App = () => {
     };
 
     const handleExport = () => {
-        const uri = stageRef.current.toDataURL();
+        const rect = new Konva.Rect({
+            x: 0,
+            y: 0,
+            width: window.innerWidth,
+            height: window.innerHeight,
+            fill: canvasBgColor.toString('css')
+        });
+
+        layerRef.current.add(rect);
+        rect.moveToBottom();
+
+        const uri = stageRef.current.toDataURL({
+            // mimeType: 'image/png',
+            // quality: 0.8,
+            // pixelRatio: 2,
+        });
         // we also can save uri as file
         // but in the demo on Konva website it will not work
         // because of iframe restrictions
         // but feel free to use it in your apps:
         downloadURI(uri, 'stage.png');
+        rect.destroy();
     };
 
     function downloadURI(uri: string, name: string) {
