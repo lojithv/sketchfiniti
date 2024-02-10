@@ -155,12 +155,33 @@ const App = () => {
 
     const handleExport = () => {
         let rectRef;
+        const stage = stageRef.current;
+
+        //Get the original stage size
+        const stageWidth = stage.width();
+        const stageHeight = stage.height();
+
+        // Get the current scale of the stage
+        const scaleX = stage.scaleX();
+        const scaleY = stage.scaleY();
+
+        // Calculate the actual stage size after zooming out
+        const actualWidth = stageWidth / scaleX;
+        const actualHeight = stageHeight / scaleY;
+
+        // Get the current position of the stage
+        const stageX = stage.x();
+        const stageY = stage.y();
+
+        // Calculate the actual position of the stage, considering any panning and scaling
+        const rectX = -stageX / scaleX;
+        const rectY = -stageY / scaleY;
         if (exportOptions.withBackground) {
             const rect = new Konva.Rect({
-                x: 0,
-                y: 0,
-                width: window.innerWidth,
-                height: window.innerHeight,
+                x: rectX,
+                y: rectY,
+                width: actualWidth,
+                height: actualHeight,
                 fill: canvasBgColor.toString('css')
             });
             rectRef = rect;
