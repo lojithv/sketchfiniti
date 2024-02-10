@@ -49,6 +49,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Function to handle logout
     const logout = () => {
         // Perform logout logic here
+        console.log('logout');
+        getAuth(app).signOut();
         setIsAuthenticated(false);
     };
 
