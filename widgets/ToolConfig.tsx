@@ -18,6 +18,7 @@ import {
     Header,
     Heading,
     Slider,
+    TextField,
     View,
 } from "@adobe/react-spectrum";
 import { PressEvent } from "@react-types/shared";
@@ -31,14 +32,16 @@ const ToolConfig = (props: Props) => {
 
     const brushStrokeWidth = ToolStateStore.useBrushStrokeWidth()
 
-    const setBrushStrokeWidth = (value: number) => {
-        ToolStateStore.setBrushStrokeWidth(value)
+    const setBrushStrokeWidth = (value: string) => {
+        const parsedValue = parseInt(value.toString())
+        ToolStateStore.setBrushStrokeWidth(parsedValue)
     }
 
     const eraserStrokeWidth = ToolStateStore.useEraserStrokeWidth()
 
-    const setEraserStrokeWidth = (value: number) => {
-        ToolStateStore.setEraserStrokeWidth(value)
+    const setEraserStrokeWidth = (value: string) => {
+        const parsedValue = parseInt(value.toString())
+        ToolStateStore.setEraserStrokeWidth(parsedValue)
     }
 
     return (
@@ -61,13 +64,15 @@ const ToolConfig = (props: Props) => {
                     <Divider />
                     <Content>
                         <Flex direction="column" maxWidth="size-3000" gap="size-300">
-                            <Slider
+                            <TextField
+                                inputMode='numeric'
                                 label="Brush Stroke Width"
-                                value={brushStrokeWidth}
+                                value={brushStrokeWidth.toString()}
                                 onChange={setBrushStrokeWidth} />
-                            <Slider
+                            <TextField
+                                inputMode='numeric'
                                 label="Erase Stroke Width"
-                                value={eraserStrokeWidth}
+                                value={eraserStrokeWidth.toString()}
                                 onChange={setEraserStrokeWidth}
                             />
                         </Flex>
