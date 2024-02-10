@@ -15,6 +15,8 @@ const App = () => {
     const [tool, setTool] = React.useState("pan");
     const [isDrawing, setIsDrawing] = useState(false);
 
+    const [prevTool, setPrevTool] = useState("pan");
+
     const handleToolChange = (toolName: string) => {
         if (toolName === "pan") {
             setIsDrawing(false);
@@ -43,7 +45,13 @@ const App = () => {
     const exportOptions = ToolStateStore.useExportOptions();
 
     const handleMouseDown = (e: any) => {
-
+        console.log("down", e)
+        if (e.evt.which === 2) {
+            console.log("middle click")
+            setPrevTool(tool);
+            setTool('pan');
+            return;
+        }
         if (tool === "brush" || tool === "eraser") {
             setIsDrawing(true);
         } else {
@@ -110,7 +118,11 @@ const App = () => {
         }
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: any) => {
+        if (e.evt.which === 2) {
+            console.log("middle click")
+            setTool(prevTool);
+        }
         setIsDrawing(false);
     };
 
