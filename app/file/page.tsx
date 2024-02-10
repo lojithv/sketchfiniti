@@ -178,45 +178,45 @@ const App = () => {
         }
     }
 
-    const handleKeyDownEvents = (e: any) => {
-        console.log("test.............")
-        if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
-            console.log('undo');
-        } else if (e.key === 'y' && (e.ctrlKey || e.metaKey)) {
-            console.log('redo');
-        } else if (e.key === 'b') {
-            //enable brush tool
-            setTool('brush');
-        } else if (e.key === 'e') {
-            //enable eraser tool
-            setTool('eraser');
-        } else if (e.key === 'm') {
-            //enable move tool
-            setTool('pan');
-        } else if (e.key === '[') {
-            console.log('decrease brush size');
-            //decrease brush size
-            if (tool === 'brush') {
-                ToolStateStore.setBrushStrokeWidth(brushStrokeWidth - 1);
-                console.log(brushStrokeWidth - 1)
-            } else {
-                ToolStateStore.setEraserStrokeWidth(eraserStrokeWidth - 1);
-                console.log(eraserStrokeWidth - 1)
-            }
-        } else if (e.key === ']') {
-            console.log('increase brush size');
-            //increase brush size
-            if (tool === 'brush') {
-                ToolStateStore.setBrushStrokeWidth(brushStrokeWidth + 1);
-                console.log(brushStrokeWidth + 1)
-            } else {
-                ToolStateStore.setEraserStrokeWidth(eraserStrokeWidth + 1);
-                console.log(eraserStrokeWidth + 1)
+    useEffect(() => {
+        const handleKeyDownEvents = (e: KeyboardEvent) => {
+            console.log("test.............")
+            if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+                console.log('undo');
+            } else if (e.key === 'y' && (e.ctrlKey || e.metaKey)) {
+                console.log('redo');
+            } else if (e.key === 'b') {
+                //enable brush tool
+                setTool('brush');
+            } else if (e.key === 'e') {
+                //enable eraser tool
+                setTool('eraser');
+            } else if (e.key === 'm') {
+                //enable move tool
+                setTool('pan');
+            } else if (e.key === '[') {
+                console.log('decrease brush size');
+                //decrease brush size
+                if (tool === 'brush') {
+                    ToolStateStore.setBrushStrokeWidth(brushStrokeWidth - 1);
+                    console.log(brushStrokeWidth - 1)
+                } else {
+                    ToolStateStore.setEraserStrokeWidth(eraserStrokeWidth - 1);
+                    console.log(eraserStrokeWidth - 1)
+                }
+            } else if (e.key === ']') {
+                console.log('increase brush size');
+                //increase brush size
+                if (tool === 'brush') {
+                    ToolStateStore.setBrushStrokeWidth(brushStrokeWidth + 1);
+                    console.log(brushStrokeWidth + 1)
+                } else {
+                    ToolStateStore.setEraserStrokeWidth(eraserStrokeWidth + 1);
+                    console.log(eraserStrokeWidth + 1)
+                }
             }
         }
-    }
 
-    useEffect(() => {
         window.addEventListener('keydown', handleKeyDownEvents);
         return () => {
             window.removeEventListener('keydown', handleKeyDownEvents);
