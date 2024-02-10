@@ -40,6 +40,8 @@ const App = () => {
 
     const brushStrokeColor = ToolStateStore.useBrushStrokeColor();
 
+    const exportOptions = ToolStateStore.useExportOptions();
+
     const handleMouseDown = (e: any) => {
 
         if (tool === "brush" || tool === "eraser") {
@@ -140,16 +142,19 @@ const App = () => {
     };
 
     const handleExport = () => {
-        const rect = new Konva.Rect({
-            x: 0,
-            y: 0,
-            width: window.innerWidth,
-            height: window.innerHeight,
-            fill: canvasBgColor.toString('css')
-        });
-
-        layerRef.current.add(rect);
-        rect.moveToBottom();
+        let rectRef;
+        if (exportOptions.withBackground) {
+            const rect = new Konva.Rect({
+                x: 0,
+                y: 0,
+                width: window.innerWidth,
+                height: window.innerHeight,
+                fill: canvasBgColor.toString('css')
+            });
+            rectRef = rect;
+            layerRef.current.add(rect);
+            rect.moveToBottom();
+        }
 
         const uri = stageRef.current.toDataURL({
             // mimeType: 'image/png',
@@ -161,7 +166,9 @@ const App = () => {
         // because of iframe restrictions
         // but feel free to use it in your apps:
         downloadURI(uri, 'stage.png');
-        rect.destroy();
+        if (rectRef) {
+            rectRef.destroy();
+        }
     };
 
     function downloadURI(uri: string, name: string) {
@@ -237,8 +244,7 @@ const App = () => {
         return () => {
             window.removeEventListener('keydown', handleKeyDownEvents);
         };
-    }, [brushStrokeWidth, eraserStrokeWidth, tool]);
-
+    }, [brushStrokeWidth, eraserStrokeWidth, tool]); s
 
     // useEffect(() => {
     //   function logPressure(ev: any) {
