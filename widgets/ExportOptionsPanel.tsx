@@ -18,30 +18,23 @@ import {
     Header,
     Heading,
     Slider,
-    TextField,
     View,
+    Checkbox
 } from "@adobe/react-spectrum";
 import { PressEvent } from "@react-types/shared";
 import Actions from '@spectrum-icons/workflow/Actions';
+import Export from '@spectrum-icons/workflow/Export';
 
-type Props = {}
+type Props = {
+    handleAction: (action: string) => void
+}
 
-const ToolConfig = (props: Props) => {
-    let [color, setColor] = React.useState(parseColor('hsba(0, 100%, 50%, 0.5)'));
-    let [, saturationChannel, brightnessChannel] = color.getColorChannels();
+const ExportOptionsPanel = ({ handleAction }: Props) => {
 
-    const brushStrokeWidth = ToolStateStore.useBrushStrokeWidth()
+    const exportOptions = ToolStateStore.useExportOptions();
 
-    const setBrushStrokeWidth = (value: string) => {
-        const parsedValue = parseInt(value.toString())
-        ToolStateStore.setBrushStrokeWidth(parsedValue)
-    }
-
-    const eraserStrokeWidth = ToolStateStore.useEraserStrokeWidth()
-
-    const setEraserStrokeWidth = (value: string) => {
-        const parsedValue = parseInt(value.toString())
-        ToolStateStore.setEraserStrokeWidth(parsedValue)
+    const handleUpdateExportOptions = (key: string, value: boolean) => {
+        ToolStateStore.setExportOptions({ ...exportOptions, [key]: value });
     }
 
     return (
@@ -55,26 +48,16 @@ const ToolConfig = (props: Props) => {
                         borderRadius: '3px'
                     }}
                 ></div> */}
-                <Actions />
+                <Export />
             </ActionButton>
             {(close) => (
                 <Dialog size="S">
-                    <Heading>Configure Tools</Heading>
+                    <Heading>Export Options</Heading>
 
                     <Divider />
                     <Content>
                         <Flex direction="column" maxWidth="size-3000" gap="size-300">
-                            <TextField
-                                inputMode='numeric'
-                                label="Brush Stroke Width"
-                                value={brushStrokeWidth.toString()}
-                                onChange={setBrushStrokeWidth} />
-                            <TextField
-                                inputMode='numeric'
-                                label="Erase Stroke Width"
-                                value={eraserStrokeWidth.toString()}
-                                onChange={setEraserStrokeWidth}
-                            />
+                            <Checkbox isSelected={exportOptions.withBackground} onChange={(v) => { handleUpdateExportOptions('withBackground', v) }}>Include Background</Checkbox>
                         </Flex>
                     </Content>
                     <ButtonGroup>
@@ -84,6 +67,7 @@ const ToolConfig = (props: Props) => {
                         <Button
                             variant="accent"
                             onPress={() => {
+                                handleAction('export');
                                 close();
                             }}
                         >
@@ -96,4 +80,4 @@ const ToolConfig = (props: Props) => {
     )
 }
 
-export default ToolConfig
+export default ExportOptionsPanel

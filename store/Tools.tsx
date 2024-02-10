@@ -2,6 +2,12 @@ import { bind } from "@react-rxjs/core";
 import { createSignal } from "@react-rxjs/utils";
 import { parseColor, Color } from "@react-stately/color";
 
+export type ExportOptions = {
+  // format: 'png' | 'jpeg' | 'webp' | 'svg';
+  // quality: number;
+  withBackground: boolean;
+};
+
 export namespace ToolStateStore {
   export const [brushStrokeColorChange$, setBrushStrokeColor] = createSignal<Color>();
 
@@ -18,4 +24,8 @@ export namespace ToolStateStore {
   export const [eraserStrokeWidthChange$, setEraserStrokeWidth] = createSignal<number>();
 
   export const [useEraserStrokeWidth, eraserStrokeWidth$] = bind(eraserStrokeWidthChange$, 80);
+
+  export const [exportOptionsChange$, setExportOptions] = createSignal<ExportOptions>();
+
+  export const [useExportOptions, exportOptions$] = bind(exportOptionsChange$, { withBackground: true });
 }

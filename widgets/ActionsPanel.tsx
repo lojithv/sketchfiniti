@@ -12,6 +12,7 @@ import Delete from '@spectrum-icons/workflow/Delete'
 import SaveFloppy from '@spectrum-icons/workflow/SaveFloppy'
 import Export from '@spectrum-icons/workflow/Export'
 import { ColorPickerTypes } from '@/types/ColorPickerTypes'
+import ExportOptionsPanel from './ExportOptionsPanel'
 
 type Props = {
     handleAction: (action: string) => void
@@ -54,12 +55,12 @@ const ActionsPanel = ({ handleAction }: Props) => {
                                 <SaveFloppy />
                                 <Text>Save</Text>
                             </Item>
-                            <Item key="export" aria-label="Export">
+                            {/* <Item key="export" aria-label="Export">
                                 <Export />
                                 <Text>Export</Text>
-                            </Item>
+                            </Item> */}
                         </ActionGroup>
-
+                        <ExportOptionsPanel handleAction={handleAction} />
                         <ColorPicker colorPickerType={ColorPickerTypes.CANVAS_BG} />
                     </Flex>
                 </View>
