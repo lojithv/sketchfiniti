@@ -244,7 +244,7 @@ const App = () => {
         return () => {
             window.removeEventListener('keydown', handleKeyDownEvents);
         };
-    }, [brushStrokeWidth, eraserStrokeWidth, tool]); s
+    }, [brushStrokeWidth, eraserStrokeWidth, tool]);
 
     // useEffect(() => {
     //   function logPressure(ev: any) {
