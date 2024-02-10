@@ -155,6 +155,7 @@ const App = () => {
 
     const handleExport = () => {
         let rectRef;
+        let rectLayerRef;
         const stage = stageRef.current;
 
         //Get the original stage size
@@ -177,6 +178,7 @@ const App = () => {
         const rectX = -stageX / scaleX;
         const rectY = -stageY / scaleY;
         if (exportOptions.withBackground) {
+            const rectLayer = new Konva.Layer();
             const rect = new Konva.Rect({
                 x: rectX,
                 y: rectY,
@@ -185,8 +187,11 @@ const App = () => {
                 fill: canvasBgColor.toString('css')
             });
             rectRef = rect;
-            layerRef.current.add(rect);
+            rectLayer.add(rect);
+            stageRef.current.add(rectLayer);
             rect.moveToBottom();
+            rectLayer.moveToBottom();
+            rectLayerRef = rectLayer;
         }
 
         const uri = stageRef.current.toDataURL({
@@ -199,8 +204,9 @@ const App = () => {
         // because of iframe restrictions
         // but feel free to use it in your apps:
         downloadURI(uri, 'stage.png');
-        if (rectRef) {
+        if (rectRef && rectLayerRef) {
             rectRef.destroy();
+            rectLayerRef.destroy();
         }
     };
 
