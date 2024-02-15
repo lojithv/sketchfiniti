@@ -42,7 +42,7 @@ const CreateProject = (props: Props) => {
     };
 
     return (
-        <Provider theme={defaultTheme}>
+        <div className='p-4'>
             <DialogTrigger>
                 <ActionButton>Create New Project</ActionButton>
                 {(close) => (
@@ -66,7 +66,7 @@ const CreateProject = (props: Props) => {
                     </Dialog>
                 )}
             </DialogTrigger>
-        </Provider>
+        </div >
     )
 }
 
