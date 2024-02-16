@@ -10,12 +10,17 @@ import { Stage, Layer, Rect } from "react-konva";
 
 import Konva from "konva";
 import ActionsPanel from "@/widgets/ActionsPanel";
+import { useSearchParams } from "next/navigation";
 
 const App = () => {
     const [tool, setTool] = React.useState("pan");
     const [isDrawing, setIsDrawing] = useState(false);
 
     const [prevTool, setPrevTool] = useState("pan");
+
+    const searchParams = useSearchParams()
+
+    const search = searchParams.get('pr')
 
     const handleToolChange = (toolName: string) => {
         if (toolName === "pan") {
@@ -241,6 +246,9 @@ const App = () => {
     }
 
     useEffect(() => {
+        if (search) {
+            console.log(search)
+        }
         const handleKeyDownEvents = (e: KeyboardEvent) => {
             console.log("test.............")
             if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {

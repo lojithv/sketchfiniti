@@ -3,6 +3,7 @@
 import { app } from '@/config/firebase-config';
 import { signInWithPopup, getAuth, GoogleAuthProvider, User } from 'firebase/auth';
 import { set } from 'firebase/database';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import React, { createContext, useEffect, useState } from 'react';
 
@@ -12,6 +13,12 @@ export const AuthContext = createContext<any>(null);
 // Create the authentication provider component
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    const router = useRouter();
+
+    const searchParams = useSearchParams()
+
+    const search = searchParams.get('pr')
 
     const provider = new GoogleAuthProvider();
     const [user, setUser] = useState<User | null>(null)
@@ -29,6 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } else {
                 setIsAuthenticated(false);
                 setUser(null);
+                router.push('/');
             }
         });
     }, []);
@@ -52,6 +60,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('logout');
         getAuth(app).signOut();
         setIsAuthenticated(false);
+        router.push('/');
     };
 
     // Value object to be provided by the context
