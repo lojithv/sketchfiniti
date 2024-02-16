@@ -5,7 +5,7 @@ import { ActionMenu, Image, Item, Key, ListView, Text } from '@adobe/react-spect
 import Delete from '@spectrum-icons/workflow/Delete';
 import Edit from '@spectrum-icons/workflow/Edit';
 import Folder from '@spectrum-icons/workflow/Folder';
-import { addDoc, collection, getDocs } from 'firebase/firestore';
+import { addDoc, collection, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import React, { useContext, useEffect, useState } from 'react'
 import UpdateProject from './UpdateProject';
 import { set } from 'firebase/database';
@@ -23,9 +23,25 @@ const ProjetcsList = (props: Props) => {
     let [isUpdateDialogOpen, setUpdateDialogOpen] = React.useState(false);
 
     useEffect(() => {
-        getProjects();
+        if (isAuthenticated) {
+            detectProjectChanges();
+        }
+    }, [isAuthenticated])
 
-    }, [])
+    const detectProjectChanges = () => {
+        const q = query(collection(db, "projects"), where("createdBy", "==", user.uid));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const projectsList: any[] = [];
+            querySnapshot.forEach((doc) => {
+                projectsList.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            setProjects(projectsList);
+            console.log("Current projects: ", projectsList.join(", "));
+        });
+    }
 
     const getProjects = async () => {
         // Fetch the projects from the database
