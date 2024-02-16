@@ -9,6 +9,7 @@ import { addDoc, collection, getDocs, onSnapshot, query, where } from 'firebase/
 import React, { useContext, useEffect, useState } from 'react'
 import UpdateProject from './UpdateProject';
 import { set } from 'firebase/database';
+import { useRouter } from 'next/navigation';
 
 
 type Props = {}
@@ -21,6 +22,8 @@ const ProjetcsList = (props: Props) => {
     const [editingProject, setEditingProject] = useState<any>({});
 
     let [isUpdateDialogOpen, setUpdateDialogOpen] = React.useState(false);
+
+    const router = useRouter();
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -81,17 +84,23 @@ const ProjetcsList = (props: Props) => {
         console.log('Delete', item);
     }
 
+    const handleSelectProject = (item: any) => {
+        console.log('Select', item);
+        router.push(`/editor?pr=${item}`);
+    }
+
     return (
         <div className='flex w-full min-w-[300px] max-w-[600px] p-4 h-full flex-col'>
             <UpdateProject isOpen={isUpdateDialogOpen} setOpen={setUpdateDialogOpen} project={editingProject} />
             <ListView
-                selectionMode="multiple"
+                selectionMode="none"
                 maxWidth="size-6000"
                 aria-label="ListView example with complex items"
                 items={projects}
+                onAction={(id) => handleSelectProject(id)}
             >
                 {(item) => (
-                    <Item key={item.name} textValue={item.name}>
+                    <Item key={item.id} textValue={item.name}>
                         <Text>{item.name}</Text>
                         <ActionMenu onAction={(key) => handleAction(item, key)}>
                             <Item key="edit" textValue="Edit">
