@@ -1,12 +1,14 @@
 "use client"
 import { app, db } from '@/config/firebase-config';
 import { AuthContext } from '@/context/AuthContext';
-import { ActionMenu, Image, Item, ListView, Text } from '@adobe/react-spectrum';
+import { ActionMenu, Image, Item, Key, ListView, Text } from '@adobe/react-spectrum';
 import Delete from '@spectrum-icons/workflow/Delete';
 import Edit from '@spectrum-icons/workflow/Edit';
 import Folder from '@spectrum-icons/workflow/Folder';
 import { addDoc, collection, getDocs } from 'firebase/firestore';
 import React, { useContext, useEffect, useState } from 'react'
+import UpdateProject from './UpdateProject';
+import { set } from 'firebase/database';
 
 
 type Props = {}
@@ -15,7 +17,10 @@ const ProjetcsList = (props: Props) => {
     const { isAuthenticated, login, logout, user } = useContext(AuthContext);
     const [projects, setProjects] = useState<any[]>([]);
     const [loadingState, setLoadingState] = useState('idle');
-    const [loadMore, setLoadMore] = useState(false);
+    const [loadMore, setLoadMore] = useState(null);
+    const [editingProject, setEditingProject] = useState<any>({});
+
+    let [isUpdateDialogOpen, setUpdateDialogOpen] = React.useState(false);
 
     useEffect(() => {
         getProjects();
@@ -33,24 +38,46 @@ const ProjetcsList = (props: Props) => {
         setProjects(fetchedData);
     }
 
+    const handleAction = (item: any, action: Key) => {
+        console.log(item);
+        console.log(action);
+        switch (action) {
+            case 'edit':
+                console.log('Edit');
+                openEditPopup(item);
+                break;
+            case 'delete':
+                console.log('Delete');
+                handleDeleteProject(item);
+                break;
+            default:
+                break;
+        }
+    }
+
+    const openEditPopup = (item: any) => {
+        setUpdateDialogOpen(true);
+        setEditingProject(item);
+        console.log('Edit', item);
+    }
+
+    const handleDeleteProject = (item: any) => {
+        console.log('Delete', item);
+    }
+
     return (
         <div className='flex w-full min-w-[300px] max-w-[600px] p-4 h-full flex-col'>
+            <UpdateProject isOpen={isUpdateDialogOpen} setOpen={setUpdateDialogOpen} project={editingProject} />
             <ListView
                 selectionMode="multiple"
                 maxWidth="size-6000"
                 aria-label="ListView example with complex items"
                 items={projects}
-                onAction={(key) => alert(`Triggering action on item ${key}`)}
             >
                 {(item) => (
-                    <Item key={item.name} textValue="Glasses Dog">
-                        <Image
-                            src="https://random.dog/1a0535a6-ca89-4059-9b3a-04a554c0587b.jpg"
-                            alt="Shiba Inu with glasses"
-                        />
-                        <Text>Glasses Dog</Text>
-                        <Text slot="description">JPG</Text>
-                        <ActionMenu>
+                    <Item key={item.name} textValue={item.name}>
+                        <Text>{item.name}</Text>
+                        <ActionMenu onAction={(key) => handleAction(item, key)}>
                             <Item key="edit" textValue="Edit">
                                 <Edit />
                                 <Text>Edit</Text>
