@@ -43,7 +43,7 @@ export default function Navbar() {
     }, []);
 
     return (
-        <div className="bg-slate-900 w-full text-slate-50 p-5 flex gap-5 justify-between items-center">
+        <div className="bg-slate-900 w-full text-slate-50 p-2 flex gap-5 justify-between items-center">
             <div>Sketchfiniti</div>
             {!isAuthenticated && <div className="flex gap-5">
                 <div className="cursor-pointer" onClick={login}>Sign In</div>
@@ -54,7 +54,7 @@ export default function Navbar() {
                     <div className="relative">
                         <Image className="inline-block h-8 w-8 rounded-full ring-2 ring-white" width={50} height={50} src={user.photoURL} alt="" onClick={handleMenuState} />
                         {menuOpened && (
-                            <div className="absolute right-0 z-10 mt-4 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button">
+                            <div className="absolute right-0 z-200 mt-4 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button">
                                 <div className="py-1" role="none">
                                     <a href="#" className="text-gray-700 block px-4 py-2 text-sm" role="menuitem" id="menu-item-0">Account settings</a>
                                     <a href="#" className="text-gray-700 block px-4 py-2 text-sm" role="menuitem" id="menu-item-1">Support</a>
