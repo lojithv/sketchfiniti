@@ -2,7 +2,7 @@ import { db } from '@/config/firebase-config';
 import { AuthContext } from '@/context/AuthContext';
 import { DialogTrigger, ActionButton, Dialog, Heading, Divider, ButtonGroup, Button, Content, Form, TextField, Checkbox, Provider, defaultTheme, DialogContainer } from '@adobe/react-spectrum';
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 
 type Props = {
     project: any;
@@ -14,7 +14,13 @@ const UpdateProject = ({ isOpen, setOpen, project }: Props) => {
 
     const { isAuthenticated, login, logout, user } = useContext(AuthContext);
 
-    const [projectData, setProjectData] = useState<any>(project);
+    const [projectData, setProjectData] = useState<any>();
+
+    useEffect(() => {
+        console.log('Project', project.name);
+        setProjectData(project);
+    }, [project])
+
 
     const updateProject = async () => {
         console.log('Update project', projectData);

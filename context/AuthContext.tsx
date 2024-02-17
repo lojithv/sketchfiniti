@@ -3,7 +3,7 @@
 import { app } from '@/config/firebase-config';
 import { signInWithPopup, getAuth, GoogleAuthProvider, User } from 'firebase/auth';
 import { set } from 'firebase/database';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import React, { createContext, useEffect, useState } from 'react';
 
@@ -18,7 +18,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const searchParams = useSearchParams()
 
-    const search = searchParams.get('pr')
+    const currentPage = usePathname();
+
+    const prId = searchParams.get('pr')
 
     const provider = new GoogleAuthProvider();
     const [user, setUser] = useState<User | null>(null)
@@ -36,7 +38,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } else {
                 setIsAuthenticated(false);
                 setUser(null);
-                router.push('/');
+                if (prId != 'offline' && currentPage == 'editor') {
+                    router.push('/');
+                } else if (currentPage == 'dashboard') {
+                    router.push('/');
+                }
             }
         });
     }, []);

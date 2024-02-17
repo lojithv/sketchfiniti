@@ -1,11 +1,11 @@
 "use client"
 import { app, db } from '@/config/firebase-config';
 import { AuthContext } from '@/context/AuthContext';
-import { ActionMenu, Image, Item, Key, ListView, Text } from '@adobe/react-spectrum';
+import { ActionMenu, AlertDialog, DialogContainer, Image, Item, Key, ListView, Text } from '@adobe/react-spectrum';
 import Delete from '@spectrum-icons/workflow/Delete';
 import Edit from '@spectrum-icons/workflow/Edit';
 import Folder from '@spectrum-icons/workflow/Folder';
-import { addDoc, collection, getDocs, onSnapshot, query, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import React, { useContext, useEffect, useState } from 'react'
 import UpdateProject from './UpdateProject';
 import { set } from 'firebase/database';
@@ -22,6 +22,8 @@ const ProjetcsList = (props: Props) => {
     const [editingProject, setEditingProject] = useState<any>({});
 
     let [isUpdateDialogOpen, setUpdateDialogOpen] = React.useState(false);
+
+    const [isDeleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
     const router = useRouter();
 
@@ -67,7 +69,8 @@ const ProjetcsList = (props: Props) => {
                 break;
             case 'delete':
                 console.log('Delete');
-                handleDeleteProject(item);
+                setDeleteDialogOpen(true);
+                setEditingProject(item);
                 break;
             default:
                 break;
@@ -80,8 +83,10 @@ const ProjetcsList = (props: Props) => {
         console.log('Edit', item);
     }
 
-    const handleDeleteProject = (item: any) => {
-        console.log('Delete', item);
+    const handleDeleteProject = async () => {
+        console.log('Delete', editingProject);
+        await deleteDoc(doc(db, "projects", editingProject.id));
+        setDeleteDialogOpen(false);
     }
 
     const handleSelectProject = (item: any) => {
@@ -92,29 +97,46 @@ const ProjetcsList = (props: Props) => {
     return (
         <div className='flex w-full min-w-[300px] max-w-[600px] p-4 h-full flex-col'>
             <UpdateProject isOpen={isUpdateDialogOpen} setOpen={setUpdateDialogOpen} project={editingProject} />
-            <ListView
-                selectionMode="none"
-                maxWidth="size-6000"
-                aria-label="ListView example with complex items"
-                items={projects}
-                onAction={(id) => handleSelectProject(id)}
-            >
-                {(item) => (
-                    <Item key={item.id} textValue={item.name}>
-                        <Text>{item.name}</Text>
-                        <ActionMenu onAction={(key) => handleAction(item, key)}>
-                            <Item key="edit" textValue="Edit">
-                                <Edit />
-                                <Text>Edit</Text>
-                            </Item>
-                            <Item key="delete" textValue="Delete">
-                                <Delete />
-                                <Text>Delete</Text>
-                            </Item>
-                        </ActionMenu>
-                    </Item>
-                )}
-            </ListView>
+            {projects.length === 0 && <div className="text-center text-xl">No projects found</div>}
+            {projects.length > 0 && (
+                <ListView
+                    selectionMode="none"
+                    maxWidth="size-6000"
+                    aria-label="ListView example with complex items"
+                    items={projects}
+                    onAction={(id) => handleSelectProject(id)}
+                >
+                    {(item) => (
+                        <Item key={item.id} textValue={item.name}>
+                            <Text>{item.name}</Text>
+                            <ActionMenu onAction={(key) => handleAction(item, key)}>
+                                <Item key="edit" textValue="Edit">
+                                    <Edit />
+                                    <Text>Edit</Text>
+                                </Item>
+                                <Item key="delete" textValue="Delete">
+                                    <Delete />
+                                    <Text>Delete</Text>
+                                </Item>
+                            </ActionMenu>
+                        </Item>
+                    )}
+                </ListView>
+            )}
+            <DialogContainer onDismiss={() => setDeleteDialogOpen(false)} {...props}>
+                {isDeleteDialogOpen &&
+                    <AlertDialog
+                        title="Delete"
+                        variant="destructive"
+                        primaryActionLabel="Delete"
+                        secondaryActionLabel='Cancel'
+                        onPrimaryAction={() => handleDeleteProject()}
+                        onSecondaryAction={() => setDeleteDialogOpen(false)}
+                    >
+                        Are you sure you want to delete this item?
+                    </AlertDialog>
+                }
+            </DialogContainer>
         </div>
     )
 }
