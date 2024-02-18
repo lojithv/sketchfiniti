@@ -12,7 +12,8 @@ import Konva from "konva";
 import ActionsPanel from "@/widgets/ActionsPanel";
 import { useSearchParams } from "next/navigation";
 import { addDoc, collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
-import { fstore } from "@/config/firebase-config";
+import { db, fstore } from "@/config/firebase-config";
+import { onValue, ref, set } from "firebase/database";
 
 const Editor = () => {
     const [tool, setTool] = React.useState("pan");
@@ -257,26 +258,21 @@ const Editor = () => {
     }
 
     const updateLocalState = (data: any) => {
-        const parsedData = JSON.parse(data);
-        setLines(parsedData);
-        console.log(parsedData)
-        for (let line of parsedData) {
+        setLines(data);
+        console.log(data)
+        for (let line of data) {
             handleAddLine(line);
         }
     }
 
     const detectProjectChanges = () => {
         if (!prId) return;
-        const unsub = onSnapshot(doc(fstore, "projects", prId), (doc) => {
-            const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
-            console.log(source, " data: ", doc.data());
-            const projectData: any = {
-                id: doc.id,
-                ...doc.data()
-            }
-            setProject(projectData);
-            if (projectData?.state) {
-                updateLocalState(projectData?.state);
+        const dbRef = ref(db, 'projects/' + prId + '/drawing');
+        const unsub = onValue(dbRef, (snapshot) => {
+            const data = snapshot.val();
+            console.log(data.lines)
+            if (data) {
+                updateLocalState(data.lines);
             }
         });
         setSubscriptions([...subscriptions, unsub]);
@@ -337,15 +333,8 @@ const Editor = () => {
     const handleSaveProject = async () => {
         console.log("save project")
         try {
-            const docRef = doc(fstore, 'projects', project.id);
-
-            const updateProject = await updateDoc(docRef, {
-                state: JSON.stringify(lines),
-                updatedAt: new Date().toISOString()
-            });
-
-            // Clear form fields after successful submission
-            console.log('Item added successfully', docRef.id);
+            const stateRef = ref(db, 'projects/' + prId + '/drawing');
+            set(stateRef, { lines: lines });
         } catch (error) {
             console.error('Error adding item: ', error);
         }
