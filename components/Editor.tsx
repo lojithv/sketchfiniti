@@ -5,7 +5,7 @@ import { ToolStateStore } from "@/store/Tools";
 import Toolbar from "@/widgets/Toolbar";
 
 import { KonvaEventObject } from "konva/lib/Node";
-import React, { useEffect, useRef, useState } from "react";
+import React, { use, useContext, useEffect, useRef, useState } from "react";
 import { Stage, Layer, Rect } from "react-konva";
 
 import Konva from "konva";
@@ -14,10 +14,13 @@ import { useSearchParams } from "next/navigation";
 import { addDoc, collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { db, fstore } from "@/config/firebase-config";
 import { onValue, ref, set } from "firebase/database";
+import { AuthContext } from "@/context/AuthContext";
 
 const Editor = () => {
     const [tool, setTool] = React.useState("pan");
     const [isDrawing, setIsDrawing] = useState(false);
+
+    const [isLoaded, setIsLoaded] = useState(false);
 
     const [prevTool, setPrevTool] = useState("pan");
 
@@ -26,6 +29,12 @@ const Editor = () => {
     const prId = searchParams.get('pr')
 
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
+
+    const { isAuthenticated, login, logout, user } = useContext(AuthContext);
+
+    const [enableTools, setEnableTools] = useState(false);
+
+    const [projectSub, setProjectSub] = useState<any>(null);
 
     const handleToolChange = (toolName: string) => {
         if (toolName === "pan") {
@@ -260,31 +269,89 @@ const Editor = () => {
     const updateLocalState = (data: any) => {
         setLines(data);
         console.log(data)
+        layerRef.current.destroyChildren();
         for (let line of data) {
             handleAddLine(line);
         }
     }
 
-    const detectProjectChanges = () => {
-        if (!prId) return;
-        const dbRef = ref(db, 'projects/' + prId + '/drawing');
-        const unsub = onValue(dbRef, (snapshot) => {
-            const data = snapshot.val();
-            console.log(data.lines)
-            if (data) {
-                updateLocalState(data.lines);
-            }
-        });
-        setSubscriptions([...subscriptions, unsub]);
-    }
-
     useEffect(() => {
+        const detectProjectChanges = () => {
+            if (!prId) return;
+            const dbRef = ref(db, 'projects/' + prId + '/drawing');
+            const unsub = onValue(dbRef, (snapshot) => {
+                const data = snapshot.val();
+                console.log("detecting changes............")
+                console.log(layerRef.current.children)
+                console.log(data.lines)
+                if (data) {
+                    updateLocalState(data.lines);
+                }
+            });
+            setSubscriptions([...subscriptions, unsub]);
+        }
+
         if (prId) {
             console.log(prId)
             detectProjectChanges();
         }
+        return () => {
+            for (let unsub of subscriptions) {
+                unsub();
+            }
+        };
+    }, [prId])
+
+    useEffect(() => {
+        const getProject = () => {
+            console.log("get project")
+            // if (!prId) return;
+            // console.log(user)
+            // const unsub = onSnapshot(doc(fstore, "projects", prId), (doc) => {
+            //     const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
+            //     console.log(source, " data: ", doc.data());
+            //     const projectData: any = {
+            //         id: doc.id,
+            //         ...doc.data()
+            //     }
+            //     console.log(projectData)
+            //     setProject(projectData);
+            //     if (projectData) {
+            //         if (projectData.createdBy === user.uid) {
+            //             setEnableTools(true);
+            //         }
+            //         // projectSub();
+            //     }
+            // });
+            // setProjectSub(unsub);
+
+
+            if (!prId) return;
+            const unsub = onSnapshot(doc(fstore, "projects", prId), (doc) => {
+                const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
+                console.log(source, " data: ", doc.data());
+                const projectData: any = {
+                    id: doc.id,
+                    ...doc.data()
+                }
+                setProject(projectData);
+                if (projectData) {
+                    if (projectData.createdBy === user.uid) {
+                        setEnableTools(true);
+                        unsub()
+                    }
+                }
+            });
+        }
+
+        if (isAuthenticated) {
+            getProject();
+        }
+    }, [isAuthenticated, prId])
+
+    useEffect(() => {
+
         const handleKeyDownEvents = (e: KeyboardEvent) => {
-            console.log("test.............")
             if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
                 console.log('undo');
             } else if (e.key === 'y' && (e.ctrlKey || e.metaKey)) {
@@ -321,14 +388,13 @@ const Editor = () => {
             }
         }
 
-        window.addEventListener('keydown', handleKeyDownEvents);
+        if (enableTools) {
+            window.addEventListener('keydown', handleKeyDownEvents);
+        }
         return () => {
             window.removeEventListener('keydown', handleKeyDownEvents);
-            for (let unsub of subscriptions) {
-                unsub();
-            }
         };
-    }, [brushStrokeWidth, eraserStrokeWidth, tool]);
+    }, [brushStrokeWidth, eraserStrokeWidth, tool, enableTools]);
 
     const handleSaveProject = async () => {
         console.log("save project")
@@ -369,8 +435,8 @@ const Editor = () => {
             >
                 <AppNavbar />
             </div>
-            <Toolbar tool={tool} handleToolChange={handleToolChange} />
-            <ActionsPanel handleAction={handleAction} />
+            {enableTools && <Toolbar tool={tool} handleToolChange={handleToolChange} />}
+            {enableTools && <ActionsPanel handleAction={handleAction} />}
             <Stage
                 width={window.innerWidth}
                 height={window.innerHeight}

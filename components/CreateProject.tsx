@@ -20,7 +20,7 @@ const CreateProject = (props: Props) => {
                 createdBy: user.uid,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-                state: null,
+                // state: null,
             });
 
             // Clear form fields after successful submission
