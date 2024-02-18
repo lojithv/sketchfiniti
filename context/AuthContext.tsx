@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Set the state of isAuthenticated to true or false
         getAuth(app).onAuthStateChanged((user) => {
             console.log(user);
-            if (user) {
+            if (user && user.uid) {
                 setIsAuthenticated(true);
                 setUser(user);
             } else {
@@ -53,8 +53,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const credential = GoogleAuthProvider.credentialFromResult(result);
             const token = credential?.accessToken;
             const user = result.user;
-            setIsAuthenticated(true);
-            setUser(user)
+            if (user.uid) {
+                setIsAuthenticated(true);
+                setUser(user)
+            }
         }).catch((error) => {
             console.error(error);
         });
