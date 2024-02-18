@@ -1,4 +1,4 @@
-import { db } from '@/config/firebase-config';
+import { fstore } from '@/config/firebase-config';
 import { AuthContext } from '@/context/AuthContext';
 import { DialogTrigger, ActionButton, Dialog, Heading, Divider, ButtonGroup, Button, Content, Form, TextField, Checkbox, Provider, defaultTheme } from '@adobe/react-spectrum';
 import { addDoc, collection } from 'firebase/firestore';
@@ -15,7 +15,7 @@ const CreateProject = (props: Props) => {
         // Create a new project
         //use firebase to create a new project
         try {
-            const docRef = await addDoc(collection(db, "projects"), {
+            const docRef = await addDoc(collection(fstore, "projects"), {
                 name: projectData.name,
                 createdBy: user.uid,
                 createdAt: new Date().toISOString(),
