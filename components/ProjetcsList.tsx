@@ -1,5 +1,5 @@
 "use client"
-import { app, db } from '@/config/firebase-config';
+import { app, fstore } from '@/config/firebase-config';
 import { AuthContext } from '@/context/AuthContext';
 import { ActionMenu, AlertDialog, DialogContainer, Image, Item, Key, ListView, Text } from '@adobe/react-spectrum';
 import Delete from '@spectrum-icons/workflow/Delete';
@@ -34,7 +34,7 @@ const ProjetcsList = (props: Props) => {
     }, [isAuthenticated])
 
     const detectProjectChanges = () => {
-        const q = query(collection(db, "projects"), where("createdBy", "==", user.uid));
+        const q = query(collection(fstore, "projects"), where("createdBy", "==", user.uid));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const projectsList: any[] = [];
             querySnapshot.forEach((doc) => {
@@ -51,7 +51,7 @@ const ProjetcsList = (props: Props) => {
     const getProjects = async () => {
         // Fetch the projects from the database
         //use firebase to get project by user id
-        const querySnapshot = await getDocs(collection(db, "projects"));
+        const querySnapshot = await getDocs(collection(fstore, "projects"));
         const fetchedData = querySnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
@@ -85,7 +85,7 @@ const ProjetcsList = (props: Props) => {
 
     const handleDeleteProject = async () => {
         console.log('Delete', editingProject);
-        await deleteDoc(doc(db, "projects", editingProject.id));
+        await deleteDoc(doc(fstore, "projects", editingProject.id));
         setDeleteDialogOpen(false);
     }
 

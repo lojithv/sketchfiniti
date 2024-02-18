@@ -11,6 +11,8 @@ import { Stage, Layer, Rect } from "react-konva";
 import Konva from "konva";
 import ActionsPanel from "@/widgets/ActionsPanel";
 import { useSearchParams } from "next/navigation";
+import { addDoc, collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
+import { fstore } from "@/config/firebase-config";
 
 const Editor = () => {
     const [tool, setTool] = React.useState("pan");
@@ -20,7 +22,9 @@ const Editor = () => {
 
     const searchParams = useSearchParams()
 
-    const search = searchParams.get('pr')
+    const prId = searchParams.get('pr')
+
+    const [subscriptions, setSubscriptions] = useState<any[]>([]);
 
     const handleToolChange = (toolName: string) => {
         if (toolName === "pan") {
@@ -49,6 +53,8 @@ const Editor = () => {
 
     const exportOptions = ToolStateStore.useExportOptions();
 
+    const [project, setProject] = useState<any>({});
+
     const handleMouseDown = (e: any) => {
         console.log("down", e)
         if (e.evt.which === 2) {
@@ -64,7 +70,7 @@ const Editor = () => {
             return;
         }
         const pos = layerRef.current.getRelativePointerPosition();
-        setLines([...lines, { tool, points: [pos.x, pos.y], color: brushStrokeColor.toString('css') }]);
+        setLines([...lines, { tool, points: [pos.x, pos.y], color: brushStrokeColor.toString('css'), brushStrokeWidth, eraserStrokeWidth }]);
         const newLine = new Konva.Line({
             stroke: brushStrokeColor.toString('css'),
             strokeWidth: tool === 'brush' ? brushStrokeWidth : eraserStrokeWidth,
@@ -78,14 +84,15 @@ const Editor = () => {
         });
         setLastLineRef(newLine);
         layerRef.current.add(newLine);
+        // db.ref(`projects/${prId}/drawings/lines`).push(newLine);
     };
 
     const handleAddLine = (line: any) => {
         const newLine = new Konva.Line({
             stroke: line.color,
-            strokeWidth: 5,
+            strokeWidth: line.tool === 'brush' ? line.brushStrokeWidth : line.eraserStrokeWidth,
             globalCompositeOperation:
-                tool === line.tool ? 'source-over' : 'destination-out',
+                line.tool === 'brush' ? 'source-over' : 'destination-out',
             // round cap for smoother lines
             lineCap: 'round',
             lineJoin: 'round',
@@ -93,6 +100,8 @@ const Editor = () => {
             points: line.points,
         });
         layerRef.current.add(newLine);
+        layerRef.current.batchDraw();
+        stageRef.current.batchDraw();
     }
 
     const handleMouseMove = (e: any) => {
@@ -236,8 +245,10 @@ const Editor = () => {
                 break;
             case 'clear':
                 layerRef.current.destroyChildren();
+                setLines([]);
                 break;
             case 'save':
+                handleSaveProject();
                 break;
             case 'export':
                 handleExport();
@@ -245,9 +256,36 @@ const Editor = () => {
         }
     }
 
+    const updateLocalState = (data: any) => {
+        const parsedData = JSON.parse(data);
+        setLines(parsedData);
+        console.log(parsedData)
+        for (let line of parsedData) {
+            handleAddLine(line);
+        }
+    }
+
+    const detectProjectChanges = () => {
+        if (!prId) return;
+        const unsub = onSnapshot(doc(fstore, "projects", prId), (doc) => {
+            const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
+            console.log(source, " data: ", doc.data());
+            const projectData: any = {
+                id: doc.id,
+                ...doc.data()
+            }
+            setProject(projectData);
+            if (projectData?.state) {
+                updateLocalState(projectData?.state);
+            }
+        });
+        setSubscriptions([...subscriptions, unsub]);
+    }
+
     useEffect(() => {
-        if (search) {
-            console.log(search)
+        if (prId) {
+            console.log(prId)
+            detectProjectChanges();
         }
         const handleKeyDownEvents = (e: KeyboardEvent) => {
             console.log("test.............")
@@ -290,8 +328,28 @@ const Editor = () => {
         window.addEventListener('keydown', handleKeyDownEvents);
         return () => {
             window.removeEventListener('keydown', handleKeyDownEvents);
+            for (let unsub of subscriptions) {
+                unsub();
+            }
         };
     }, [brushStrokeWidth, eraserStrokeWidth, tool]);
+
+    const handleSaveProject = async () => {
+        console.log("save project")
+        try {
+            const docRef = doc(fstore, 'projects', project.id);
+
+            const updateProject = await updateDoc(docRef, {
+                state: JSON.stringify(lines),
+                updatedAt: new Date().toISOString()
+            });
+
+            // Clear form fields after successful submission
+            console.log('Item added successfully', docRef.id);
+        } catch (error) {
+            console.error('Error adding item: ', error);
+        }
+    }
 
     // useEffect(() => {
     //   function logPressure(ev: any) {
