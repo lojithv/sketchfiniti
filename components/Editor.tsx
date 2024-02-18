@@ -13,8 +13,9 @@ import ActionsPanel from "@/widgets/ActionsPanel";
 import { useSearchParams } from "next/navigation";
 import { addDoc, collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { db, fstore } from "@/config/firebase-config";
-import { onValue, ref, set } from "firebase/database";
+import { onValue, push, ref, set } from "firebase/database";
 import { AuthContext } from "@/context/AuthContext";
+import _ from "lodash";
 
 const Editor = () => {
     const [tool, setTool] = React.useState("pan");
@@ -68,9 +69,7 @@ const Editor = () => {
     const [project, setProject] = useState<any>({});
 
     const handleMouseDown = (e: any) => {
-        console.log("down", e)
         if (e.evt.which === 2) {
-            console.log("middle click")
             setPrevTool(tool);
             setTool('pan');
             return;
@@ -96,6 +95,7 @@ const Editor = () => {
         });
         setLastLineRef(newLine);
         layerRef.current.add(newLine);
+        handleSaveProject();
         // db.ref(`projects/${prId}/drawings/lines`).push(newLine);
     };
 
@@ -117,14 +117,9 @@ const Editor = () => {
     }
 
     const handleMouseMove = (e: any) => {
-        // console.log(e.evt.pressure)
-        console.log("move")
         if (!isDrawing) {
             return;
         }
-        // console.log(e)
-        console.log(e.evt.pressure)
-
 
         if (tool === "brush" || tool === "eraser") {
             const point = layerRef.current.getRelativePointerPosition();
@@ -146,10 +141,10 @@ const Editor = () => {
 
     const handleMouseUp = (e: any) => {
         if (e.evt.which === 2) {
-            console.log("middle click")
             setTool(prevTool);
         }
         setIsDrawing(false);
+        handleSaveProject();
     };
 
     const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
@@ -256,8 +251,9 @@ const Editor = () => {
             case 'redo':
                 break;
             case 'clear':
-                layerRef.current.destroyChildren();
+                layerRef.current?.destroyChildren();
                 setLines([]);
+                handleSaveProject('clear');
                 break;
             case 'save':
                 handleSaveProject();
@@ -269,12 +265,15 @@ const Editor = () => {
     }
 
     const updateLocalState = (data: any) => {
-        setLines(data);
-        console.log(data)
-        layerRef?.current?.destroyChildren();
-        for (let line of data) {
+        const diff = _.difference(data, lines);
+        if (data.length === 0) {
+            layerRef?.current?.destroyChildren();
+        }
+        // layerRef?.current?.destroyChildren();
+        for (let line of diff) {
             handleAddLine(line);
         }
+        setLines(data);
     }
 
     useEffect(() => {
@@ -283,19 +282,19 @@ const Editor = () => {
             const dbRef = ref(db, 'projects/' + prId + '/drawing');
             const unsub = onValue(dbRef, (snapshot) => {
                 const data = snapshot.val();
-                console.log("detecting changes............")
-                console.log(layerRef.current.children)
-                console.log(data.lines)
                 if (data) {
-                    updateLocalState(data.lines);
+                    updateLocalState(data?.lines);
+                } else {
+                    updateLocalState([]);
+                }
+                if (user && project.createdBy === user.uid) {
+                    unsub();
                 }
             });
             setSubscriptions([...subscriptions, unsub]);
         }
 
         if (project.id && prId) {
-            console.log(prId)
-            console.log(project)
             if (project.accessibility === 'private') {
                 if (user && user.uid === project.createdBy && user.uid !== null) {
                     setIsAccessGranted(true);
@@ -321,7 +320,6 @@ const Editor = () => {
             if (!prId) return;
             const unsub = onSnapshot(doc(fstore, "projects", prId), (doc) => {
                 const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
-                console.log(source, " data: ", doc.data());
                 const projectData: any = {
                     id: doc.id,
                     ...doc.data()
@@ -336,9 +334,9 @@ const Editor = () => {
             });
         }
 
-        if (isAuthenticated) {
-            getProject();
-        }
+        // if (isAuthenticated) {
+        getProject();
+        // }
     }, [prId, isAuthenticated])
 
     useEffect(() => {
@@ -388,11 +386,21 @@ const Editor = () => {
         };
     }, [brushStrokeWidth, eraserStrokeWidth, tool, enableTools]);
 
-    const handleSaveProject = async () => {
-        console.log("save project")
+    const handleSaveProject = async (action?: string) => {
         try {
             const stateRef = ref(db, 'projects/' + prId + '/drawing');
-            set(stateRef, { lines: lines });
+            const linesData = action == 'clear' ? [] : lines
+            set(stateRef, { lines: linesData });
+        } catch (error) {
+            console.error('Error adding item: ', error);
+        }
+    }
+
+    const handlePushPoints = async (data: any[]) => {
+        try {
+            const stateRef = ref(db, 'projects/' + prId + '/drawing/lines/');
+            const linesData = data
+            set(stateRef, linesData);
         } catch (error) {
             console.error('Error adding item: ', error);
         }

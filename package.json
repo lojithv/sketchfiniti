@@ -16,6 +16,8 @@
     "@spectrum-icons/workflow": "^4.2.8",
     "firebase": "^10.8.0",
     "konva": "^9.3.0",
+    "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21",
     "next": "14.0.4",
     "react": "^18",
     "react-aria": "^3.31.1",
@@ -30,6 +32,7 @@
     "autoprefixer": "^10.0.1",
     "eslint": "^8",
     "eslint-config-next": "14.0.4",
+    "lodash-webpack-plugin": "^0.11.6",
     "postcss": "^8",
     "tailwindcss": "^3.3.0",
     "typescript": "^5"
