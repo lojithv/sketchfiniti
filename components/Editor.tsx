@@ -36,6 +36,8 @@ const Editor = () => {
 
     const [projectSub, setProjectSub] = useState<any>(null);
 
+    const [isAccessGranted, setIsAccessGranted] = useState(false);
+
     const handleToolChange = (toolName: string) => {
         if (toolName === "pan") {
             setIsDrawing(false);
@@ -269,7 +271,7 @@ const Editor = () => {
     const updateLocalState = (data: any) => {
         setLines(data);
         console.log(data)
-        layerRef.current.destroyChildren();
+        layerRef?.current?.destroyChildren();
         for (let line of data) {
             handleAddLine(line);
         }
@@ -291,40 +293,30 @@ const Editor = () => {
             setSubscriptions([...subscriptions, unsub]);
         }
 
-        if (prId) {
+        if (project.id && prId) {
             console.log(prId)
-            detectProjectChanges();
+            console.log(project)
+            if (project.accessibility === 'private') {
+                if (user && user.uid === project.createdBy && user.uid !== null) {
+                    setIsAccessGranted(true);
+                    detectProjectChanges();
+                } else {
+                    console.log("You don't have access to this project")
+                }
+            } else {
+                setIsAccessGranted(true);
+                detectProjectChanges();
+            }
         }
         return () => {
             for (let unsub of subscriptions) {
                 unsub();
             }
         };
-    }, [prId])
+    }, [project])
 
     useEffect(() => {
         const getProject = () => {
-            console.log("get project")
-            // if (!prId) return;
-            // console.log(user)
-            // const unsub = onSnapshot(doc(fstore, "projects", prId), (doc) => {
-            //     const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
-            //     console.log(source, " data: ", doc.data());
-            //     const projectData: any = {
-            //         id: doc.id,
-            //         ...doc.data()
-            //     }
-            //     console.log(projectData)
-            //     setProject(projectData);
-            //     if (projectData) {
-            //         if (projectData.createdBy === user.uid) {
-            //             setEnableTools(true);
-            //         }
-            //         // projectSub();
-            //     }
-            // });
-            // setProjectSub(unsub);
-
 
             if (!prId) return;
             const unsub = onSnapshot(doc(fstore, "projects", prId), (doc) => {
@@ -336,7 +328,7 @@ const Editor = () => {
                 }
                 setProject(projectData);
                 if (projectData) {
-                    if (projectData.createdBy === user.uid) {
+                    if (user && projectData.createdBy === user.uid) {
                         setEnableTools(true);
                         unsub()
                     }
@@ -347,7 +339,7 @@ const Editor = () => {
         if (isAuthenticated) {
             getProject();
         }
-    }, [isAuthenticated, prId])
+    }, [prId, isAuthenticated])
 
     useEffect(() => {
 
@@ -437,30 +429,31 @@ const Editor = () => {
             </div>
             {enableTools && <Toolbar tool={tool} handleToolChange={handleToolChange} />}
             {enableTools && <ActionsPanel handleAction={handleAction} />}
-            <Stage
-                width={window.innerWidth}
-                height={window.innerHeight}
-                onMouseEnter={() => changeCursor('crosshair')}
-                onPointerDown={handleMouseDown}
-                onPointerMove={handleMouseMove}
-                onMouseup={handleMouseUp}
-                onWheel={handleWheel}
-                // onTouchStart={handleMouseDown}
-                // onTouchMove={handleMouseMove}
-                onTouchEnd={handleMouseUp}
-                ref={stageRef}
+            {isAccessGranted && (
+                <Stage
+                    width={window.innerWidth}
+                    height={window.innerHeight}
+                    onMouseEnter={() => changeCursor('crosshair')}
+                    onPointerDown={handleMouseDown}
+                    onPointerMove={handleMouseMove}
+                    onMouseup={handleMouseUp}
+                    onWheel={handleWheel}
+                    // onTouchStart={handleMouseDown}
+                    // onTouchMove={handleMouseMove}
+                    onTouchEnd={handleMouseUp}
+                    ref={stageRef}
 
-                scaleX={scale}
-                scaleY={scale}
-                className="stage"
-                style={{ backgroundColor: canvasBgColor.toString('css') }}
-                draggable={tool === "pan" ? true : false}
-            >
-                <Layer
-                    ref={layerRef}
-                    className="layer"
+                    scaleX={scale}
+                    scaleY={scale}
+                    className="stage"
+                    style={{ backgroundColor: canvasBgColor.toString('css') }}
+                    draggable={tool === "pan" ? true : false}
                 >
-                    {/* <Rect
+                    <Layer
+                        ref={layerRef}
+                        className="layer"
+                    >
+                        {/* <Rect
             x={50}
             y={50}
             width={100}
@@ -469,8 +462,15 @@ const Editor = () => {
             draggable={true}
           /> */}
 
-                </Layer>
-            </Stage>
+                    </Layer>
+                </Stage>
+            )}
+
+            {!isAccessGranted && (
+                <div className="w-full h-full flex items-center justify-center bg-slate-900 text-white">
+                    <h1 className="text-4xl">You don&apos;t have access to this project</h1>
+                </div>
+            )}
         </div>
     );
 };

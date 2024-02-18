@@ -20,6 +20,7 @@ const CreateProject = (props: Props) => {
                 createdBy: user.uid,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
+                accessibility: 'private',
                 // state: null,
             });
 
