@@ -301,7 +301,7 @@ const Editor = () => {
     useEffect(() => {
         const detectProjectChanges = () => {
             if (!prId) return;
-            const dbRef = ref(db, 'projects/' + prId + '/drawing');
+            const dbRef = ref(db, 'v1/projects/' + prId + '/drawing');
             const unsub = onValue(dbRef, (snapshot) => {
                 console.log('Data updated');
                 const data = snapshot.val();
@@ -412,7 +412,7 @@ const Editor = () => {
 
     const handleSaveProject = async (action?: string) => {
         try {
-            const stateRef = ref(db, 'projects/' + prId + '/drawing');
+            const stateRef = ref(db, 'v1/projects/' + prId + '/drawing');
             const linesData = action == 'clear' ? [] : lines
             set(stateRef, { lines: linesData });
             setStateUpdated(false);
@@ -423,7 +423,7 @@ const Editor = () => {
 
     const handlePushPoints = async (data: any[]) => {
         try {
-            const stateRef = ref(db, 'projects/' + prId + '/drawing/lines/');
+            const stateRef = ref(db, 'v1/projects/' + prId + '/drawing/lines/');
             const linesData = data
             set(stateRef, linesData);
         } catch (error) {
