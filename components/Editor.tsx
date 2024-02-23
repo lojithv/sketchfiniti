@@ -16,6 +16,7 @@ import { db, fstore } from "@/config/firebase-config";
 import { onValue, push, ref, set } from "firebase/database";
 import { AuthContext } from "@/context/AuthContext";
 import _ from "lodash";
+import { parseColor, Color } from "@react-stately/color";
 
 const Editor = () => {
     const [tool, setTool] = React.useState("pan");
@@ -57,10 +58,6 @@ const Editor = () => {
 
     const [redoStack, setRedoStack] = useState<any[]>([]);
 
-    const [stateUpdated, setStateUpdated] = useState(false);
-
-    // const groupRef = useRef<any>(null);
-
 
     const brushStrokeWidth = ToolStateStore.useBrushStrokeWidth()
 
@@ -71,6 +68,8 @@ const Editor = () => {
     const brushStrokeColor = ToolStateStore.useBrushStrokeColor();
 
     const exportOptions = ToolStateStore.useExportOptions();
+
+    const stateUpdated = ToolStateStore.useStateUpdated();
 
     const [project, setProject] = useState<any>({});
 
@@ -102,9 +101,7 @@ const Editor = () => {
         setLastLineRef(newLine);
         setLineRefs([...lineRefs, newLine]);
         layerRef.current.add(newLine);
-        setStateUpdated(true);
-        // handleSaveProject();
-        // db.ref(`projects/${prId}/drawings/lines`).push(newLine);
+        ToolStateStore.setStateUpdated(true);
     };
 
     const handleAddLine = (line: any, action?: string) => {
@@ -155,8 +152,7 @@ const Editor = () => {
             setTool(prevTool);
         }
         setIsDrawing(false);
-        setStateUpdated(true);
-        // handleSaveProject();
+        ToolStateStore.setStateUpdated(true);
     };
 
     const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
@@ -279,15 +275,18 @@ const Editor = () => {
     }
 
     const updateLocalState = (data: any) => {
-        const diff = _.difference(data, lines);
-        if (data.length === 0) {
+        const diff = _.difference(data?.lines, lines);
+        if (data?.lines.length === 0) {
             layerRef?.current?.destroyChildren();
         }
         // layerRef?.current?.destroyChildren();
         for (let line of diff) {
             handleAddLine(line);
         }
-        setLines(data);
+        setLines(data?.lines);
+        if (data?.canvasBgColor) {
+            ToolStateStore.setCanvasBgColor(parseColor(data?.canvasBgColor));
+        }
     }
 
     useEffect(() => {
@@ -306,7 +305,7 @@ const Editor = () => {
                 console.log('Data updated');
                 const data = snapshot.val();
                 if (data) {
-                    updateLocalState(data?.lines);
+                    updateLocalState(data);
                 } else {
                     updateLocalState([]);
                 }
@@ -414,8 +413,8 @@ const Editor = () => {
         try {
             const stateRef = ref(db, 'v1/projects/' + prId + '/drawing');
             const linesData = action == 'clear' ? [] : lines
-            set(stateRef, { lines: linesData });
-            setStateUpdated(false);
+            set(stateRef, { lines: linesData, canvasBgColor: canvasBgColor.toString('css') });
+            ToolStateStore.setStateUpdated(false);
         } catch (error) {
             console.error('Error adding item: ', error);
         }
@@ -448,8 +447,7 @@ const Editor = () => {
             lastLineRef.destroy();
             setLineRefs(lineRefs.slice(0, -1));
         }
-        setStateUpdated(true);
-        // handleSaveProject();
+        ToolStateStore.setStateUpdated(true);
     }
 
     const handleRedo = () => {
@@ -459,9 +457,8 @@ const Editor = () => {
             setLines([...lines, lastRedoLine]);
             setRedoStack(redoStack.slice(0, -1));
             handleAddLine(lastRedoLine, 'redo');
-            setStateUpdated(true);
+            ToolStateStore.setStateUpdated(true);
         }
-        // handleSaveProject();
     }
 
     // useEffect(() => {
