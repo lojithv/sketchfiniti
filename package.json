@@ -19,6 +19,7 @@
     "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
     "next": "14.0.4",
+    "perfect-freehand": "^1.2.0",
     "react": "^18",
     "react-aria": "^3.31.1",
     "react-dom": "^18",

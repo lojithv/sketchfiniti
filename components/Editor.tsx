@@ -16,6 +16,7 @@ import { db, fstore } from "@/config/firebase-config";
 import { onValue, push, ref, set } from "firebase/database";
 import { AuthContext } from "@/context/AuthContext";
 import _ from "lodash";
+import { parseColor, Color } from "@react-stately/color";
 
 const Editor = () => {
     const [tool, setTool] = React.useState("pan");
@@ -53,7 +54,9 @@ const Editor = () => {
 
     const [lastLineRef, setLastLineRef] = useState<any>(null);
 
-    // const groupRef = useRef<any>(null);
+    const [lineRefs, setLineRefs] = useState<any[]>([]);
+
+    const [redoStack, setRedoStack] = useState<any[]>([]);
 
 
     const brushStrokeWidth = ToolStateStore.useBrushStrokeWidth()
@@ -65,6 +68,8 @@ const Editor = () => {
     const brushStrokeColor = ToolStateStore.useBrushStrokeColor();
 
     const exportOptions = ToolStateStore.useExportOptions();
+
+    const stateUpdated = ToolStateStore.useStateUpdated();
 
     const [project, setProject] = useState<any>({});
 
@@ -94,12 +99,12 @@ const Editor = () => {
             points: [pos.x, pos.y, pos.x, pos.y],
         });
         setLastLineRef(newLine);
+        setLineRefs([...lineRefs, newLine]);
         layerRef.current.add(newLine);
-        handleSaveProject();
-        // db.ref(`projects/${prId}/drawings/lines`).push(newLine);
+        ToolStateStore.setStateUpdated(true);
     };
 
-    const handleAddLine = (line: any) => {
+    const handleAddLine = (line: any, action?: string) => {
         const newLine = new Konva.Line({
             stroke: line.color,
             strokeWidth: line.tool === 'brush' ? line.brushStrokeWidth : line.eraserStrokeWidth,
@@ -114,6 +119,9 @@ const Editor = () => {
         layerRef.current.add(newLine);
         layerRef.current.batchDraw();
         stageRef.current.batchDraw();
+        if (action === 'redo') {
+            setLineRefs([...lineRefs, newLine]);
+        }
     }
 
     const handleMouseMove = (e: any) => {
@@ -144,7 +152,7 @@ const Editor = () => {
             setTool(prevTool);
         }
         setIsDrawing(false);
-        handleSaveProject();
+        ToolStateStore.setStateUpdated(true);
     };
 
     const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
@@ -247,8 +255,10 @@ const Editor = () => {
     const handleAction = (action: string) => {
         switch (action) {
             case 'undo':
+                handleUndo();
                 break;
             case 'redo':
+                handleRedo();
                 break;
             case 'clear':
                 layerRef.current?.destroyChildren();
@@ -265,33 +275,42 @@ const Editor = () => {
     }
 
     const updateLocalState = (data: any) => {
-        const diff = _.difference(data, lines);
-        if (data.length === 0) {
+        const diff = _.difference(data?.lines, lines);
+        if (data?.lines.length === 0) {
             layerRef?.current?.destroyChildren();
         }
         // layerRef?.current?.destroyChildren();
         for (let line of diff) {
             handleAddLine(line);
         }
-        setLines(data);
+        setLines(data?.lines);
+        if (data?.canvasBgColor) {
+            ToolStateStore.setCanvasBgColor(parseColor(data?.canvasBgColor));
+        }
     }
+
+    useEffect(() => {
+        if (user && project.createdBy === user.uid) {
+            for (let unsub of subscriptions) {
+                unsub();
+            }
+        }
+    }, [subscriptions])
 
     useEffect(() => {
         const detectProjectChanges = () => {
             if (!prId) return;
-            const dbRef = ref(db, 'projects/' + prId + '/drawing');
+            const dbRef = ref(db, 'v1/projects/' + prId + '/drawing');
             const unsub = onValue(dbRef, (snapshot) => {
+                console.log('Data updated');
                 const data = snapshot.val();
                 if (data) {
-                    updateLocalState(data?.lines);
+                    updateLocalState(data);
                 } else {
                     updateLocalState([]);
                 }
-                if (user && project.createdBy === user.uid) {
-                    unsub();
-                }
+                setSubscriptions([...subscriptions, unsub]);
             });
-            setSubscriptions([...subscriptions, unsub]);
         }
 
         if (project.id && prId) {
@@ -375,6 +394,10 @@ const Editor = () => {
                     ToolStateStore.setEraserStrokeWidth(eraserStrokeWidth + 1);
                     console.log(eraserStrokeWidth + 1)
                 }
+            } else if (e.key === '0') {
+                //reset canvas zoom and pan
+                setScale(1);
+                stageRef.current.position({ x: 0, y: 0 });
             }
         }
 
@@ -388,9 +411,10 @@ const Editor = () => {
 
     const handleSaveProject = async (action?: string) => {
         try {
-            const stateRef = ref(db, 'projects/' + prId + '/drawing');
+            const stateRef = ref(db, 'v1/projects/' + prId + '/drawing');
             const linesData = action == 'clear' ? [] : lines
-            set(stateRef, { lines: linesData });
+            set(stateRef, { lines: linesData, canvasBgColor: canvasBgColor.toString('css') });
+            ToolStateStore.setStateUpdated(false);
         } catch (error) {
             console.error('Error adding item: ', error);
         }
@@ -398,11 +422,42 @@ const Editor = () => {
 
     const handlePushPoints = async (data: any[]) => {
         try {
-            const stateRef = ref(db, 'projects/' + prId + '/drawing/lines/');
+            const stateRef = ref(db, 'v1/projects/' + prId + '/drawing/lines/');
             const linesData = data
             set(stateRef, linesData);
         } catch (error) {
             console.error('Error adding item: ', error);
+        }
+    }
+
+    useEffect(() => {
+        if (lines.length > 0 && stateUpdated) {
+            handleSaveProject();
+        }
+    }, [stateUpdated])
+
+    const handleUndo = () => {
+        if (lines.length === 0) return;
+        const lastLine = lines[lines.length - 1];
+
+        const lastLineRef = lineRefs[lineRefs.length - 1];
+        if (lastLineRef) {
+            setRedoStack([...redoStack, lastLine]);
+            setLines(lines.slice(0, -1));
+            lastLineRef.destroy();
+            setLineRefs(lineRefs.slice(0, -1));
+        }
+        ToolStateStore.setStateUpdated(true);
+    }
+
+    const handleRedo = () => {
+        if (redoStack.length === 0) return;
+        const lastRedoLine = redoStack[redoStack.length - 1];
+        if (lastRedoLine) {
+            setLines([...lines, lastRedoLine]);
+            setRedoStack(redoStack.slice(0, -1));
+            handleAddLine(lastRedoLine, 'redo');
+            ToolStateStore.setStateUpdated(true);
         }
     }
 

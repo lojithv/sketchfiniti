@@ -28,4 +28,8 @@ export namespace ToolStateStore {
   export const [exportOptionsChange$, setExportOptions] = createSignal<ExportOptions>();
 
   export const [useExportOptions, exportOptions$] = bind(exportOptionsChange$, { withBackground: true });
+
+  export const [stateUpdatedChange$, setStateUpdated] = createSignal<boolean>();
+
+  export const [useStateUpdated, stateUpdated$] = bind(stateUpdatedChange$, false);
 }

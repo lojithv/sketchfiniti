@@ -32,6 +32,7 @@ function ColorPicker({ colorPickerType }: { colorPickerType: string }) {
       ToolStateStore.setBrushStrokeColor(color);
     } else if (colorPickerType === "CANVAS_BG") {
       ToolStateStore.setCanvasBgColor(color);
+      ToolStateStore.setStateUpdated(true);
     }
   }
 
@@ -40,7 +41,7 @@ function ColorPicker({ colorPickerType }: { colorPickerType: string }) {
 
   useEffect(() => {
     setLocalColor();
-  }, []);
+  }, [canvasBgColor, brushStrokeColor]);
 
   const setLocalColor = () => {
     if (colorPickerType === ColorPickerTypes.BRUSH_STROKE) {

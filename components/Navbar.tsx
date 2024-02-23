@@ -44,7 +44,7 @@ export default function Navbar() {
 
     return (
         <div className="bg-slate-900 w-full text-slate-50 p-2 flex gap-5 justify-between items-center">
-            <div className="font-bold text-lg">Sketchfiniti</div>
+            <div className="font-bold text-lg">Prod</div>
             {!isAuthenticated && <div className="flex gap-5">
                 <div className="cursor-pointer" onClick={login}>Sign In</div>
             </div>}
