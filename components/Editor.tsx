@@ -53,6 +53,12 @@ const Editor = () => {
 
     const [lastLineRef, setLastLineRef] = useState<any>(null);
 
+    const [lineRefs, setLineRefs] = useState<any[]>([]);
+
+    const [redoStack, setRedoStack] = useState<any[]>([]);
+
+    const [stateUpdated, setStateUpdated] = useState(false);
+
     // const groupRef = useRef<any>(null);
 
 
@@ -94,12 +100,14 @@ const Editor = () => {
             points: [pos.x, pos.y, pos.x, pos.y],
         });
         setLastLineRef(newLine);
+        setLineRefs([...lineRefs, newLine]);
         layerRef.current.add(newLine);
-        handleSaveProject();
+        setStateUpdated(true);
+        // handleSaveProject();
         // db.ref(`projects/${prId}/drawings/lines`).push(newLine);
     };
 
-    const handleAddLine = (line: any) => {
+    const handleAddLine = (line: any, action?: string) => {
         const newLine = new Konva.Line({
             stroke: line.color,
             strokeWidth: line.tool === 'brush' ? line.brushStrokeWidth : line.eraserStrokeWidth,
@@ -114,6 +122,9 @@ const Editor = () => {
         layerRef.current.add(newLine);
         layerRef.current.batchDraw();
         stageRef.current.batchDraw();
+        if (action === 'redo') {
+            setLineRefs([...lineRefs, newLine]);
+        }
     }
 
     const handleMouseMove = (e: any) => {
@@ -144,7 +155,8 @@ const Editor = () => {
             setTool(prevTool);
         }
         setIsDrawing(false);
-        handleSaveProject();
+        setStateUpdated(true);
+        // handleSaveProject();
     };
 
     const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
@@ -247,8 +259,10 @@ const Editor = () => {
     const handleAction = (action: string) => {
         switch (action) {
             case 'undo':
+                handleUndo();
                 break;
             case 'redo':
+                handleRedo();
                 break;
             case 'clear':
                 layerRef.current?.destroyChildren();
@@ -277,21 +291,27 @@ const Editor = () => {
     }
 
     useEffect(() => {
+        if (user && project.createdBy === user.uid) {
+            for (let unsub of subscriptions) {
+                unsub();
+            }
+        }
+    }, [subscriptions])
+
+    useEffect(() => {
         const detectProjectChanges = () => {
             if (!prId) return;
             const dbRef = ref(db, 'projects/' + prId + '/drawing');
             const unsub = onValue(dbRef, (snapshot) => {
+                console.log('Data updated');
                 const data = snapshot.val();
                 if (data) {
                     updateLocalState(data?.lines);
                 } else {
                     updateLocalState([]);
                 }
-                if (user && project.createdBy === user.uid) {
-                    unsub();
-                }
+                setSubscriptions([...subscriptions, unsub]);
             });
-            setSubscriptions([...subscriptions, unsub]);
         }
 
         if (project.id && prId) {
@@ -391,6 +411,7 @@ const Editor = () => {
             const stateRef = ref(db, 'projects/' + prId + '/drawing');
             const linesData = action == 'clear' ? [] : lines
             set(stateRef, { lines: linesData });
+            setStateUpdated(false);
         } catch (error) {
             console.error('Error adding item: ', error);
         }
@@ -404,6 +425,39 @@ const Editor = () => {
         } catch (error) {
             console.error('Error adding item: ', error);
         }
+    }
+
+    useEffect(() => {
+        if (lines.length > 0 && stateUpdated) {
+            handleSaveProject();
+        }
+    }, [stateUpdated])
+
+    const handleUndo = () => {
+        if (lines.length === 0) return;
+        const lastLine = lines[lines.length - 1];
+
+        const lastLineRef = lineRefs[lineRefs.length - 1];
+        if (lastLineRef) {
+            setRedoStack([...redoStack, lastLine]);
+            setLines(lines.slice(0, -1));
+            lastLineRef.destroy();
+            setLineRefs(lineRefs.slice(0, -1));
+        }
+        setStateUpdated(true);
+        // handleSaveProject();
+    }
+
+    const handleRedo = () => {
+        if (redoStack.length === 0) return;
+        const lastRedoLine = redoStack[redoStack.length - 1];
+        if (lastRedoLine) {
+            setLines([...lines, lastRedoLine]);
+            setRedoStack(redoStack.slice(0, -1));
+            handleAddLine(lastRedoLine, 'redo');
+            setStateUpdated(true);
+        }
+        // handleSaveProject();
     }
 
     // useEffect(() => {
