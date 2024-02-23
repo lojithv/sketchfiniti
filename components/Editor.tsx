@@ -395,6 +395,10 @@ const Editor = () => {
                     ToolStateStore.setEraserStrokeWidth(eraserStrokeWidth + 1);
                     console.log(eraserStrokeWidth + 1)
                 }
+            } else if (e.key === '0') {
+                //reset canvas zoom and pan
+                setScale(1);
+                stageRef.current.position({ x: 0, y: 0 });
             }
         }
 
