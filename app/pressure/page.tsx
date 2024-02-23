@@ -1,53 +1,95 @@
 "use client"
 
 // PenPressureCanvas.js
-import React, { useRef, useEffect, useState, use } from 'react';
-import { getStroke } from 'perfect-freehand'
-import { getSvgPathFromStroke } from './utils'
-import "./styles.css";
-
-const options = {
-    size: 32,
-    thinning: 0.5,
-    smoothing: 0.5,
-    streamline: 0.5,
-    easing: (t: any) => t,
-    start: {
-        taper: 0,
-        easing: (t: any) => t,
-        cap: true
-    },
-    end: {
-        taper: 100,
-        easing: (t: any) => t,
-        cap: true
-    }
-};
+import React, { useRef, useEffect, useState } from 'react';
+import './styles.css';
 
 const PenPressureCanvas = () => {
-    const [points, setPoints] = React.useState<any[]>([]);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
+    const [drawing, setDrawing] = useState(false);
+    const [lastX, setLastX] = useState(0);
+    const [lastY, setLastY] = useState(0);
+    const [penPressure, setPenPressure] = useState(1); // Default pressure
 
-    function handlePointerDown(e: any) {
-        e.target.setPointerCapture(e.pointerId);
-        setPoints([[e.pageX, e.pageY, e.pressure]]);
-    }
+    const brushSize = 10; // Default brush size
 
-    function handlePointerMove(e: any) {
-        if (e.buttons !== 1) return;
-        setPoints([...points, [e.pageX, e.pageY, e.pressure]]);
-    }
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        const context = canvas?.getContext('2d');
+        if (context) {
+            setCtx(context);
+            context.lineWidth = brushSize * 1;
+            context.lineCap = 'round';
+            context.strokeStyle = '#000';
+        }
+    }, []);
 
-    const stroke = getStroke(points, options);
-    const pathData = getSvgPathFromStroke(stroke);
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        console.log('canvas', canvas);
+        if (!canvas) return;
+
+        const handlePointerMove = (e: PointerEvent) => {
+            console.log(e.pressure);
+            if (!ctx || !drawing) return;
+            ctx.lineTo(e.clientX, e.clientY);
+            ctx.stroke();
+            setLastX(e.clientX);
+            setLastY(e.clientY);
+        };
+
+        const handlePointerDown = (e: PointerEvent) => {
+            setDrawing(true);
+            setLastX(e.clientX);
+            setLastY(e.clientY);
+            if (ctx) {
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+            }
+        };
+
+        const handlePointerUp = () => {
+            setDrawing(false);
+        };
+
+        canvas.addEventListener('pointermove', handlePointerMove);
+        canvas.addEventListener('pointerdown', handlePointerDown);
+        canvas.addEventListener('pointerup', handlePointerUp);
+
+        return () => {
+            canvas.removeEventListener('pointermove', handlePointerMove);
+            canvas.removeEventListener('pointerdown', handlePointerDown);
+            canvas.removeEventListener('pointerup', handlePointerUp);
+        };
+    }, [ctx, drawing, lastX, lastY]);
+
+    // Update canvas size on window resize
+    useEffect(() => {
+        const handleResize = () => {
+            if (canvasRef.current) {
+                canvasRef.current.width = window.innerWidth;
+                canvasRef.current.height = window.innerHeight;
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Set initial size
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
 
     return (
-        <svg
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            style={{ touchAction: "none" }}
-        >
-            {points && <path d={pathData} />}
-        </svg>
+        <div className="w-screen h-screen relative overflow-hidden">
+            <canvas
+                ref={canvasRef}
+                width={window.innerWidth}
+                height={window.innerHeight}
+                style={{ border: '1px solid black' }}
+            />
+        </div>
     );
 };
 
