@@ -276,14 +276,14 @@ const Editor = () => {
 
     const updateLocalState = (data: any) => {
         const diff = _.difference(data?.lines, lines);
-        if (data?.lines.length === 0) {
+        if (data?.lines?.length === 0) {
             layerRef?.current?.destroyChildren();
         }
         // layerRef?.current?.destroyChildren();
         for (let line of diff) {
             handleAddLine(line);
         }
-        setLines(data?.lines);
+        setLines(data?.lines ? data?.lines : []);
         if (data?.canvasBgColor) {
             ToolStateStore.setCanvasBgColor(parseColor(data?.canvasBgColor));
         }
@@ -431,7 +431,7 @@ const Editor = () => {
     }
 
     useEffect(() => {
-        if (lines.length > 0 && stateUpdated) {
+        if (lines?.length > 0 && stateUpdated) {
             handleSaveProject();
         }
     }, [stateUpdated])
