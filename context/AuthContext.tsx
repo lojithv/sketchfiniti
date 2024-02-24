@@ -35,13 +35,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (user && user.uid) {
                 setIsAuthenticated(true);
                 setUser(user);
+                console.log('prId', prId);
+                console.log('currentPage', currentPage);
+                if (currentPage == '/editor' && !prId) {
+                    router.push('/editor?pr=offline');
+                }
             } else {
                 setIsAuthenticated(false);
                 setUser(null);
-                if (prId != 'offline' && currentPage == 'editor') {
+                console.log('prId', prId);
+                if (prId && prId != 'offline' && currentPage == '/editor') {
                     router.push('/');
-                } else if (currentPage == 'dashboard') {
+                } else if (currentPage == '/dashboard') {
                     router.push('/');
+                } else if (currentPage == '/editor' && !prId) {
+                    router.push('/editor?pr=offline');
                 }
             }
         });
