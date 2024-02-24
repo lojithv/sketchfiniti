@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setUser(null);
                 console.log('prId', prId);
                 if (currentPage == '/dashboard') {
-                    router.push('/');
+                    // router.push('/');
                 } else if (currentPage == '/editor' && !prId) {
                     router.push('/editor?pr=offline');
                 }
