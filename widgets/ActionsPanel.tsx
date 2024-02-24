@@ -29,8 +29,8 @@ const ActionsPanel = ({ handleAction }: Props) => {
                 <button className="bg-gray-100 p-2 rounded-md" onClick={() => handleAction('export')}>Export</button>
             </div> */}
 
-            <Provider theme={defaultTheme}>
-                <View backgroundColor="gray-50" padding="size-50">
+            <Provider theme={defaultTheme} UNSAFE_style={{ backgroundColor: 'transparent' }}>
+                <View backgroundColor="transparent" padding="size-50">
                     <Flex direction={"column"} gap={"size-100"}>
                         <ActionGroup
                             orientation="vertical"

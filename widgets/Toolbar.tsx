@@ -6,6 +6,7 @@ import React from 'react'
 import ColorPicker from './ColorPicker'
 import { ColorPickerTypes } from '@/types/ColorPickerTypes'
 import ToolConfig from './ToolConfig'
+import Shortcuts from './Shortcuts'
 
 type Props = {
     tool: string,
@@ -13,11 +14,16 @@ type Props = {
 }
 
 const Toolbar = ({ tool, handleToolChange }: Props) => {
+
     return (
-        <div style={{ position: "absolute", zIndex: 20, top: "50px" }}>
-            <Provider theme={defaultTheme}>
-                <View backgroundColor="gray-50" padding="size-50">
-                    <Flex direction={"column"} gap={"size-100"}>
+        <div style={{ position: "absolute", zIndex: 20, top: "50px", }}>
+            <Provider theme={defaultTheme} UNSAFE_style={{ backgroundColor: 'transparent' }}>
+
+                {/* <View backgroundColor="transparent"> */}
+
+                {/* <Flex direction={"column"} gap={"size-100"} justifyContent={"space-between"}> */}
+                <div style={{ height: 'calc(100vh - 55px)' }} className='flex flex-col justify-between p-2 bg-transparent'>
+                    <div className='flex flex-col gap-2'>
                         <ActionGroup
                             orientation="vertical"
                             isEmphasized
@@ -41,8 +47,12 @@ const Toolbar = ({ tool, handleToolChange }: Props) => {
                         </ActionGroup>
                         <ToolConfig />
                         <ColorPicker colorPickerType={ColorPickerTypes.BRUSH_STROKE} />
-                    </Flex>
-                </View>
+                    </div>
+
+                    <Shortcuts />
+                </div>
+                {/* </Flex> */}
+                {/* </View> */}
             </Provider>
         </div>
     )
