@@ -116,11 +116,13 @@ const Editor = () => {
             // add point twice, so we have some drawings even on a simple click
             points: line.points,
         });
-        layerRef.current.add(newLine);
-        layerRef.current.batchDraw();
-        stageRef.current.batchDraw();
-        if (action === 'redo') {
-            setLineRefs([...lineRefs, newLine]);
+        if (layerRef.current && stageRef.current) {
+            layerRef.current.add(newLine);
+            layerRef.current.batchDraw();
+            stageRef.current.batchDraw();
+            if (action === 'redo') {
+                setLineRefs([...lineRefs, newLine]);
+            }
         }
     }
 
@@ -275,8 +277,10 @@ const Editor = () => {
     }
 
     const updateLocalState = (data: any) => {
+        console.log('Data updated');
+        console.log(data);
         const diff = _.difference(data?.lines, lines);
-        if (data?.lines?.length === 0) {
+        if (!data?.lines?.length) {
             layerRef?.current?.destroyChildren();
         }
         // layerRef?.current?.destroyChildren();
