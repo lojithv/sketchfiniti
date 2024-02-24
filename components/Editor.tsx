@@ -71,7 +71,7 @@ const Editor = () => {
 
     const stateUpdated = ToolStateStore.useStateUpdated();
 
-    const [project, setProject] = useState<any>({});
+    const [project, setProject] = useState<any>(null);
 
     const handleMouseDown = (e: any) => {
         if (e.evt.which === 2) {
@@ -116,11 +116,13 @@ const Editor = () => {
             // add point twice, so we have some drawings even on a simple click
             points: line.points,
         });
-        layerRef.current.add(newLine);
-        layerRef.current.batchDraw();
-        stageRef.current.batchDraw();
-        if (action === 'redo') {
-            setLineRefs([...lineRefs, newLine]);
+        if (layerRef.current && stageRef.current) {
+            layerRef.current.add(newLine);
+            layerRef.current.batchDraw();
+            stageRef.current.batchDraw();
+            if (action === 'redo') {
+                setLineRefs([...lineRefs, newLine]);
+            }
         }
     }
 
@@ -275,15 +277,17 @@ const Editor = () => {
     }
 
     const updateLocalState = (data: any) => {
+        console.log('Data updated');
+        console.log(data);
         const diff = _.difference(data?.lines, lines);
-        if (data?.lines.length === 0) {
+        if (!data?.lines?.length) {
             layerRef?.current?.destroyChildren();
         }
         // layerRef?.current?.destroyChildren();
         for (let line of diff) {
             handleAddLine(line);
         }
-        setLines(data?.lines);
+        setLines(data?.lines ? data?.lines : []);
         if (data?.canvasBgColor) {
             ToolStateStore.setCanvasBgColor(parseColor(data?.canvasBgColor));
         }
@@ -313,7 +317,7 @@ const Editor = () => {
             });
         }
 
-        if (project.id && prId) {
+        if (project?.id && prId) {
             if (project.accessibility === 'private') {
                 if (user && user.uid === project.createdBy && user.uid !== null) {
                     setIsAccessGranted(true);
@@ -353,9 +357,12 @@ const Editor = () => {
             });
         }
 
-        // if (isAuthenticated) {
-        getProject();
-        // }
+        if (prId && prId !== 'offline') {
+            getProject();
+        } else if (prId === 'offline') {
+            setEnableTools(true);
+            setIsAccessGranted(true);
+        }
     }, [prId, isAuthenticated])
 
     useEffect(() => {
@@ -410,6 +417,9 @@ const Editor = () => {
     }, [brushStrokeWidth, eraserStrokeWidth, tool, enableTools]);
 
     const handleSaveProject = async (action?: string) => {
+        if (!project) {
+            return;
+        }
         try {
             const stateRef = ref(db, 'v1/projects/' + prId + '/drawing');
             const linesData = action == 'clear' ? [] : lines
@@ -431,7 +441,7 @@ const Editor = () => {
     }
 
     useEffect(() => {
-        if (lines.length > 0 && stateUpdated) {
+        if (lines?.length > 0 && stateUpdated) {
             handleSaveProject();
         }
     }, [stateUpdated])

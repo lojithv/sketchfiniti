@@ -2,6 +2,7 @@
 
 import { AuthContext } from "@/context/AuthContext";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
 
@@ -44,7 +45,11 @@ export default function Navbar() {
 
     return (
         <div className="bg-slate-900 w-full text-slate-50 p-2 flex gap-5 justify-between items-center">
-            <div className="font-bold text-lg">Prod</div>
+            <div className="font-bold text-lg">
+                <Link href={"/"}>
+                    Prod
+                </Link>
+            </div>
             {!isAuthenticated && <div className="flex gap-5">
                 <div className="cursor-pointer" onClick={login}>Sign In</div>
             </div>}
