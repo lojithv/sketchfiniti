@@ -12,9 +12,11 @@ export default function Home() {
           <div className="flex flex-col justify-center items-center gap-5 h-full">
             <h1 className="text-4xl text-slate-50">Welcome to Prod</h1>
             <p className="text-slate-50">This is a simple app to manage your products</p>
-            <div className="p-5 bg-slate-300 text-black w-fit">
-              <Link href={"/select-mode"}>Get Started</Link>
-            </div>
+            <Link href={"/select-mode"}>
+              <div className="p-5 bg-slate-300 text-black w-fit">
+                Get Started
+              </div>
+            </Link>
           </div>
         </div>
       </AuthProvider>

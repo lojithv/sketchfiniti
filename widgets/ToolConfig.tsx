@@ -33,14 +33,14 @@ const ToolConfig = (props: Props) => {
     const brushStrokeWidth = ToolStateStore.useBrushStrokeWidth()
 
     const setBrushStrokeWidth = (value: string) => {
-        const parsedValue = parseInt(value.toString())
+        const parsedValue = parseInt(value ? value?.toString() : '0')
         ToolStateStore.setBrushStrokeWidth(parsedValue)
     }
 
     const eraserStrokeWidth = ToolStateStore.useEraserStrokeWidth()
 
     const setEraserStrokeWidth = (value: string) => {
-        const parsedValue = parseInt(value.toString())
+        const parsedValue = parseInt(value ? value?.toString() : '0')
         ToolStateStore.setEraserStrokeWidth(parsedValue)
     }
 
@@ -67,12 +67,12 @@ const ToolConfig = (props: Props) => {
                             <TextField
                                 inputMode='numeric'
                                 label="Brush Stroke Width"
-                                value={brushStrokeWidth.toString()}
+                                value={brushStrokeWidth?.toString()}
                                 onChange={setBrushStrokeWidth} />
                             <TextField
                                 inputMode='numeric'
                                 label="Erase Stroke Width"
-                                value={eraserStrokeWidth.toString()}
+                                value={eraserStrokeWidth?.toString()}
                                 onChange={setEraserStrokeWidth}
                             />
                         </Flex>
