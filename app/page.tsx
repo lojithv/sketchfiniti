@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/context/AuthContext";
 import { Provider, defaultTheme } from "@adobe/react-spectrum";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -11,7 +12,9 @@ export default function Home() {
           <div className="flex flex-col justify-center items-center gap-5 h-full">
             <h1 className="text-4xl text-slate-50">Welcome to Prod</h1>
             <p className="text-slate-50">This is a simple app to manage your products</p>
-            <div className="p-5 bg-slate-300 text-black w-fit">Get Started</div>
+            <div className="p-5 bg-slate-300 text-black w-fit">
+              <Link href={"/select-mode"}>Get Started</Link>
+            </div>
           </div>
         </div>
       </AuthProvider>
