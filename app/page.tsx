@@ -10,10 +10,10 @@ export default function Home() {
         <div className="flex w-screen h-screen flex-col bg-slate-900">
           <Navbar />
           <div className="flex flex-col justify-center items-center gap-5 h-full">
-            <h1 className="text-4xl text-slate-50">Welcome to Prod</h1>
-            <p className="text-slate-50">This is a simple app to manage your products</p>
-            <Link href={"/select-mode"}>
-              <div className="p-5 bg-slate-300 text-black w-fit">
+            <h1 className="text-6xl text-slate-50">Welcome to Prod</h1>
+            <p className="text-slate-50 text-lg">This is a simple app to manage your products</p>
+            <Link href={"/dashboard"}>
+              <div className="p-5 bg-slate-300 text-black w-fit font-bold text-lg">
                 Get Started
               </div>
             </Link>
