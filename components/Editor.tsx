@@ -13,7 +13,7 @@ import ActionsPanel from "@/widgets/ActionsPanel";
 import { useSearchParams } from "next/navigation";
 import { addDoc, collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { db, fstore } from "@/config/firebase-config";
-import { onValue, push, ref, set } from "firebase/database";
+import { child, onValue, push, ref, set, update } from "firebase/database";
 import { AuthContext } from "@/context/AuthContext";
 import _ from "lodash";
 import { parseColor, Color } from "@react-stately/color";
@@ -48,6 +48,8 @@ const Editor = () => {
     };
 
     const [lines, setLines] = useState<any[]>([]);
+    const [images, setImages] = useState<any[]>([]);
+
     const [scale, setScale] = useState(1);
     const stageRef = useRef<any>(null);
     const layerRef = useRef<any>(null);
@@ -72,6 +74,8 @@ const Editor = () => {
     const stateUpdated = ToolStateStore.useStateUpdated();
 
     const [project, setProject] = useState<any>(null);
+
+    const [selectedId, setSelectedId] = useState<any>(null);
 
     const handleMouseDown = (e: any) => {
         if (e.evt.which === 2) {
@@ -124,6 +128,100 @@ const Editor = () => {
                 setLineRefs([...lineRefs, newLine]);
             }
         }
+    }
+
+    const handleAddImage = (image: any, saveImage?: boolean) => {
+        const img = new window.Image() as any;
+        console.log(img);
+        img.src = image.image;
+        img.onload = () => {
+            const windowWidth = window.innerWidth - 50;
+            const windowHeight = window.innerHeight - 50;
+
+            let scale = 1;
+            if (img.width > windowWidth || img.height > windowHeight) {
+                const scaleX = windowWidth / img.width;
+                const scaleY = windowHeight / img.height;
+                scale = Math.min(scaleX, scaleY);
+            }
+
+            const newImage = {
+                id: images.length + 1,
+                image: image.image,
+                width: img.width * scale,
+                height: img.height * scale,
+                x: (windowWidth - img.width * scale) / 2,
+                y: (windowHeight - img.height * scale) / 2,
+                rotation: 0,
+            };
+
+            setImages([...images, newImage]);
+
+            // Add the image to the Konva Layer using layerRef
+            const konvaImage = new Konva.Image({
+                image: img,
+                x: (windowWidth - img.width * scale) / 2,
+                y: (windowHeight - img.height * scale) / 2,
+                width: img.width * scale,
+                height: img.height * scale,
+                draggable: true,
+                id: newImage.id.toString(),
+                name: 'image',
+                rotation: newImage.rotation,
+            });
+
+
+            konvaImage.on('click', (e) => {
+                const clickedId = e.target.id();
+                if (selectedId !== clickedId) {
+                    setSelectedId(clickedId);
+                } else {
+                    setSelectedId(null);
+                }
+            });
+
+            konvaImage.on('dragend', (e) => {
+                handleImageChange(newImage.id, {
+                    x: e.target.x(),
+                    y: e.target.y(),
+                });
+            });
+
+            konvaImage.on('transformend', (e) => {
+                const node = layerRef.current.findOne(`#${newImage.id}`);
+                const scaleX = node.scaleX();
+                const scaleY = node.scaleY();
+                const rotation = node.rotation();
+
+                handleImageChange(newImage.id, {
+                    x: node.x(),
+                    y: node.y(),
+                    width: node.width() * scaleX,
+                    height: node.height() * scaleY,
+                    rotation: rotation,
+                });
+            });
+
+            konvaImage.on('transform', (e) => {
+                const node = e.target;
+                const scaleX = node.scaleX();
+                const scaleY = node.scaleY();
+
+                // Prevent negative scaling
+                if (scaleX < 0 || scaleY < 0) {
+                    node.scaleX(Math.max(scaleX, 0.1));
+                    node.scaleY(Math.max(scaleY, 0.1));
+                }
+            });
+
+            const transformer = new Konva.Transformer({
+                node: konvaImage,
+            });
+
+            layerRef.current.add(konvaImage);
+            layerRef.current.add(transformer);
+            layerRef.current.batchDraw();
+        };
     }
 
     const handleMouseMove = (e: any) => {
@@ -279,15 +377,26 @@ const Editor = () => {
     const updateLocalState = (data: any) => {
         console.log('Data updated');
         console.log(data);
-        const diff = _.difference(data?.lines, lines);
+        const imagesList = data?.images ? Object.keys(data?.images).map((key) => data?.images[key]) : [];
+        console.log(imagesList);
+        const linesDiff = _.difference(data?.lines, lines);
+        const imageDiff = _.difference(imagesList, images);
         if (!data?.lines?.length) {
             layerRef?.current?.destroyChildren();
         }
+        if (!data?.images?.length) {
+            layerRef?.current?.destroyChildren();
+        }
         // layerRef?.current?.destroyChildren();
-        for (let line of diff) {
+        for (let line of linesDiff) {
             handleAddLine(line);
         }
+        for (let image of imageDiff) {
+            handleAddImage(image);
+        }
         setLines(data?.lines ? data?.lines : []);
+        // var result = Object.keys(data?.images).map((key) => data?.images[key]);
+        setImages(imagesList ? imagesList : []);
         if (data?.canvasBgColor) {
             ToolStateStore.setCanvasBgColor(parseColor(data?.canvasBgColor));
         }
@@ -491,6 +600,152 @@ const Editor = () => {
     //   document.addEventListener('pointermove', logPressure, false);
     // }, []);
 
+    const handleDrop = (e: any) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new window.Image() as any;
+            console.log(img);
+            img.src = reader.result;
+            img.onload = () => {
+                const windowWidth = window.innerWidth - 50;
+                const windowHeight = window.innerHeight - 50;
+
+                let scale = 1;
+                if (img.width > windowWidth || img.height > windowHeight) {
+                    const scaleX = windowWidth / img.width;
+                    const scaleY = windowHeight / img.height;
+                    scale = Math.min(scaleX, scaleY);
+                }
+
+                const newImage = {
+                    id: images.length + 1,
+                    image: reader.result,
+                    width: img.width * scale,
+                    height: img.height * scale,
+                    x: (windowWidth - img.width * scale) / 2,
+                    y: (windowHeight - img.height * scale) / 2,
+                    rotation: 0,
+                };
+
+                setImages([...images, newImage]);
+
+                // Add the image to the Konva Layer using layerRef
+                const konvaImage = new Konva.Image({
+                    image: img,
+                    x: (windowWidth - img.width * scale) / 2,
+                    y: (windowHeight - img.height * scale) / 2,
+                    width: img.width * scale,
+                    height: img.height * scale,
+                    draggable: true,
+                    id: newImage.id.toString(),
+                    name: 'image',
+                    rotation: newImage.rotation,
+                });
+
+                handleSaveImage(newImage);
+
+                konvaImage.on('click', (e) => {
+                    const clickedId = e.target.id();
+                    if (selectedId !== clickedId) {
+                        setSelectedId(clickedId);
+                    } else {
+                        setSelectedId(null);
+                    }
+                });
+
+                konvaImage.on('dragend', (e) => {
+                    handleImageChange(newImage.id, {
+                        x: e.target.x(),
+                        y: e.target.y(),
+                    });
+                });
+
+                konvaImage.on('transformend', (e) => {
+                    const node = layerRef.current.findOne(`#${newImage.id}`);
+                    const scaleX = node.scaleX();
+                    const scaleY = node.scaleY();
+                    const rotation = node.rotation();
+
+                    handleImageChange(newImage.id, {
+                        x: node.x(),
+                        y: node.y(),
+                        width: node.width() * scaleX,
+                        height: node.height() * scaleY,
+                        rotation: rotation,
+                    });
+                });
+
+                konvaImage.on('transform', (e) => {
+                    const node = e.target;
+                    const scaleX = node.scaleX();
+                    const scaleY = node.scaleY();
+
+                    // Prevent negative scaling
+                    if (scaleX < 0 || scaleY < 0) {
+                        node.scaleX(Math.max(scaleX, 0.1));
+                        node.scaleY(Math.max(scaleY, 0.1));
+                    }
+                });
+
+                const transformer = new Konva.Transformer({
+                    node: konvaImage,
+                });
+
+                layerRef.current.add(konvaImage);
+                layerRef.current.add(transformer);
+                layerRef.current.batchDraw();
+            };
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleDragOver = (e: any) => {
+        e.preventDefault();
+    };
+
+    const handleImageChange = (id: any, newProps: { x?: number; y?: number; width?: number, height?: number, rotation?: number }) => {
+        console.log('Image changed');
+        console.log(newProps)
+
+        const updatedImages = images.map((image) => {
+            if (image.id === id) {
+                return {
+                    ...image,
+                    ...newProps,
+                };
+            }
+            return image;
+        });
+        setImages(updatedImages);
+
+        // Find the corresponding transformer and update its props
+        const selectedNode = layerRef.current.findOne(`#${id}`);
+        const transformer = layerRef.current.findOne(`Transformer`);
+        if (selectedNode && transformer) {
+            transformer.setNode(selectedNode);
+            layerRef.current.batchDraw();
+        }
+    };
+
+    const handleSaveImage = (image: any) => {
+        if (!project) {
+            return;
+        }
+        try {
+            // const stateRef = ref(db, 'v1/projects/' + prId + '/drawing');
+            const newImageKey = push(child(ref(db), 'v1/projects/' + prId + '/drawing/images')).key;
+            // set(stateRef, { images: images });
+            const updates: any = {};
+            updates['v1/projects/' + prId + '/drawing/images/' + newImageKey] = image;
+            update(ref(db), updates);
+            ToolStateStore.setStateUpdated(false);
+        } catch (error) {
+            console.error('Error adding item: ', error);
+        }
+    }
+
     return (
         <div
             className="w-screen h-screen relative "
@@ -500,33 +755,36 @@ const Editor = () => {
             >
                 <AppNavbar />
             </div>
-            {enableTools && <Toolbar tool={tool} handleToolChange={handleToolChange} />}
-            {enableTools && <ActionsPanel handleAction={handleAction} />}
-            {isAccessGranted && (
-                <Stage
-                    width={window.innerWidth}
-                    height={window.innerHeight}
-                    onMouseEnter={() => changeCursor('crosshair')}
-                    onPointerDown={handleMouseDown}
-                    onPointerMove={handleMouseMove}
-                    onMouseup={handleMouseUp}
-                    onWheel={handleWheel}
-                    // onTouchStart={handleMouseDown}
-                    // onTouchMove={handleMouseMove}
-                    onTouchEnd={handleMouseUp}
-                    ref={stageRef}
+            <div className="w-full h-full relative"
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}>
+                {enableTools && <Toolbar tool={tool} handleToolChange={handleToolChange} />}
+                {enableTools && <ActionsPanel handleAction={handleAction} />}
+                {isAccessGranted && (
+                    <Stage
+                        width={window.innerWidth}
+                        height={window.innerHeight}
+                        onMouseEnter={() => changeCursor('crosshair')}
+                        onPointerDown={handleMouseDown}
+                        onPointerMove={handleMouseMove}
+                        onMouseup={handleMouseUp}
+                        onWheel={handleWheel}
+                        // onTouchStart={handleMouseDown}
+                        // onTouchMove={handleMouseMove}
+                        onTouchEnd={handleMouseUp}
+                        ref={stageRef}
 
-                    scaleX={scale}
-                    scaleY={scale}
-                    className="stage"
-                    style={{ backgroundColor: canvasBgColor.toString('css') }}
-                    draggable={tool === "pan" ? true : false}
-                >
-                    <Layer
-                        ref={layerRef}
-                        className="layer"
+                        scaleX={scale}
+                        scaleY={scale}
+                        className="stage"
+                        style={{ backgroundColor: canvasBgColor.toString('css') }}
+                        draggable={tool === "pan" ? true : false}
                     >
-                        {/* <Rect
+                        <Layer
+                            ref={layerRef}
+                            className="layer"
+                        >
+                            {/* <Rect
             x={50}
             y={50}
             width={100}
@@ -535,9 +793,10 @@ const Editor = () => {
             draggable={true}
           /> */}
 
-                    </Layer>
-                </Stage>
-            )}
+                        </Layer>
+                    </Stage>
+                )}
+            </div>
 
             {!isAccessGranted && (
                 <div className="w-full h-full flex items-center justify-center bg-slate-900 text-white">
