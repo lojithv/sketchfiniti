@@ -504,8 +504,8 @@ const Editor = () => {
             console.log(img);
             img.src = reader.result;
             img.onload = () => {
-                const windowWidth = window.innerWidth;
-                const windowHeight = window.innerHeight;
+                const windowWidth = window.innerWidth - 50;
+                const windowHeight = window.innerHeight - 50;
 
                 let scale = 1;
                 if (img.width > windowWidth || img.height > windowHeight) {
@@ -525,6 +525,8 @@ const Editor = () => {
                 };
 
                 setImages([...images, newImage]);
+
+
 
                 // Add the image to the Konva Layer using layerRef
                 const konvaImage = new Konva.Image({
