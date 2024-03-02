@@ -48,6 +48,8 @@ const Editor = () => {
     };
 
     const [lines, setLines] = useState<any[]>([]);
+    const [images, setImages] = useState<any[]>([]);
+
     const [scale, setScale] = useState(1);
     const stageRef = useRef<any>(null);
     const layerRef = useRef<any>(null);
@@ -491,6 +493,59 @@ const Editor = () => {
     //   document.addEventListener('pointermove', logPressure, false);
     // }, []);
 
+    const handleDrop = (e: any) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new window.Image() as any;
+            console.log(img);
+            img.src = reader.result;
+            img.onload = () => {
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+
+                let scale = 1;
+                if (img.width > windowWidth || img.height > windowHeight) {
+                    const scaleX = windowWidth / img.width;
+                    const scaleY = windowHeight / img.height;
+                    scale = Math.min(scaleX, scaleY);
+                }
+
+                setImages([...images, {
+                    image: img,
+                    width: img.width * scale,
+                    height: img.height * scale,
+                    x: (windowWidth - img.width * scale) / 2,
+                    y: (windowHeight - img.height * scale) / 2,
+                }]);
+
+                // Add the image to the Konva Layer using layerRef
+                const konvaImage = new Konva.Image({
+                    image: img,
+                    x: (windowWidth - img.width * scale) / 2,
+                    y: (windowHeight - img.height * scale) / 2,
+                    width: img.width * scale,
+                    height: img.height * scale,
+                    draggable: true,
+                });
+
+                const transformer = new Konva.Transformer({
+                    node: konvaImage,
+                });
+
+                layerRef.current.add(konvaImage);
+                layerRef.current.add(transformer);
+                layerRef.current.batchDraw();
+            };
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleDragOver = (e: any) => {
+        e.preventDefault();
+    };
+
     return (
         <div
             className="w-screen h-screen relative "
@@ -500,33 +555,36 @@ const Editor = () => {
             >
                 <AppNavbar />
             </div>
-            {enableTools && <Toolbar tool={tool} handleToolChange={handleToolChange} />}
-            {enableTools && <ActionsPanel handleAction={handleAction} />}
-            {isAccessGranted && (
-                <Stage
-                    width={window.innerWidth}
-                    height={window.innerHeight}
-                    onMouseEnter={() => changeCursor('crosshair')}
-                    onPointerDown={handleMouseDown}
-                    onPointerMove={handleMouseMove}
-                    onMouseup={handleMouseUp}
-                    onWheel={handleWheel}
-                    // onTouchStart={handleMouseDown}
-                    // onTouchMove={handleMouseMove}
-                    onTouchEnd={handleMouseUp}
-                    ref={stageRef}
+            <div className="w-full h-full relative"
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}>
+                {enableTools && <Toolbar tool={tool} handleToolChange={handleToolChange} />}
+                {enableTools && <ActionsPanel handleAction={handleAction} />}
+                {isAccessGranted && (
+                    <Stage
+                        width={window.innerWidth}
+                        height={window.innerHeight}
+                        onMouseEnter={() => changeCursor('crosshair')}
+                        onPointerDown={handleMouseDown}
+                        onPointerMove={handleMouseMove}
+                        onMouseup={handleMouseUp}
+                        onWheel={handleWheel}
+                        // onTouchStart={handleMouseDown}
+                        // onTouchMove={handleMouseMove}
+                        onTouchEnd={handleMouseUp}
+                        ref={stageRef}
 
-                    scaleX={scale}
-                    scaleY={scale}
-                    className="stage"
-                    style={{ backgroundColor: canvasBgColor.toString('css') }}
-                    draggable={tool === "pan" ? true : false}
-                >
-                    <Layer
-                        ref={layerRef}
-                        className="layer"
+                        scaleX={scale}
+                        scaleY={scale}
+                        className="stage"
+                        style={{ backgroundColor: canvasBgColor.toString('css') }}
+                        draggable={tool === "pan" ? true : false}
                     >
-                        {/* <Rect
+                        <Layer
+                            ref={layerRef}
+                            className="layer"
+                        >
+                            {/* <Rect
             x={50}
             y={50}
             width={100}
@@ -535,9 +593,10 @@ const Editor = () => {
             draggable={true}
           /> */}
 
-                    </Layer>
-                </Stage>
-            )}
+                        </Layer>
+                    </Stage>
+                )}
+            </div>
 
             {!isAccessGranted && (
                 <div className="w-full h-full flex items-center justify-center bg-slate-900 text-white">
