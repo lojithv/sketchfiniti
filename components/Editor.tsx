@@ -130,7 +130,7 @@ const Editor = () => {
         }
     }
 
-    const handleAddImage = (image: any) => {
+    const handleAddImage = (image: any, saveImage?: boolean) => {
         const img = new window.Image() as any;
         console.log(img);
         img.src = image.image;
@@ -170,7 +170,6 @@ const Editor = () => {
                 rotation: newImage.rotation,
             });
 
-            handleSaveImage(newImage);
 
             konvaImage.on('click', (e) => {
                 const clickedId = e.target.id();
@@ -378,7 +377,7 @@ const Editor = () => {
     const updateLocalState = (data: any) => {
         console.log('Data updated');
         console.log(data);
-        const imagesList = Object.keys(data?.images).map((key) => data?.images[key]);
+        const imagesList = data?.images ? Object.keys(data?.images).map((key) => data?.images[key]) : [];
         console.log(imagesList);
         const linesDiff = _.difference(data?.lines, lines);
         const imageDiff = _.difference(imagesList, images);
