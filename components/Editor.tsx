@@ -13,7 +13,7 @@ import ActionsPanel from "@/widgets/ActionsPanel";
 import { useSearchParams } from "next/navigation";
 import { addDoc, collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { db, fstore } from "@/config/firebase-config";
-import { onValue, push, ref, set } from "firebase/database";
+import { child, onValue, push, ref, set, update } from "firebase/database";
 import { AuthContext } from "@/context/AuthContext";
 import _ from "lodash";
 import { parseColor, Color } from "@react-stately/color";
@@ -516,7 +516,7 @@ const Editor = () => {
 
                 const newImage = {
                     id: images.length + 1,
-                    image: img,
+                    image: reader.result,
                     width: img.width * scale,
                     height: img.height * scale,
                     x: (windowWidth - img.width * scale) / 2,
@@ -525,8 +525,6 @@ const Editor = () => {
                 };
 
                 setImages([...images, newImage]);
-
-
 
                 // Add the image to the Konva Layer using layerRef
                 const konvaImage = new Konva.Image({
@@ -540,6 +538,8 @@ const Editor = () => {
                     name: 'image',
                     rotation: newImage.rotation,
                 });
+
+                handleSaveImage(newImage);
 
                 konvaImage.on('click', (e) => {
                     const clickedId = e.target.id();
@@ -623,6 +623,23 @@ const Editor = () => {
             layerRef.current.batchDraw();
         }
     };
+
+    const handleSaveImage = (image: any) => {
+        if (!project) {
+            return;
+        }
+        try {
+            // const stateRef = ref(db, 'v1/projects/' + prId + '/drawing');
+            const newImageKey = push(child(ref(db), 'v1/projects/' + prId + '/drawing/images')).key;
+            // set(stateRef, { images: images });
+            const updates: any = {};
+            updates['v1/projects/' + prId + '/drawing/images/' + newImageKey] = image;
+            update(ref(db), updates);
+            ToolStateStore.setStateUpdated(false);
+        } catch (error) {
+            console.error('Error adding item: ', error);
+        }
+    }
 
     return (
         <div
