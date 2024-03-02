@@ -130,6 +130,101 @@ const Editor = () => {
         }
     }
 
+    const handleAddImage = (image: any) => {
+        const img = new window.Image() as any;
+        console.log(img);
+        img.src = image.image;
+        img.onload = () => {
+            const windowWidth = window.innerWidth - 50;
+            const windowHeight = window.innerHeight - 50;
+
+            let scale = 1;
+            if (img.width > windowWidth || img.height > windowHeight) {
+                const scaleX = windowWidth / img.width;
+                const scaleY = windowHeight / img.height;
+                scale = Math.min(scaleX, scaleY);
+            }
+
+            const newImage = {
+                id: images.length + 1,
+                image: image.image,
+                width: img.width * scale,
+                height: img.height * scale,
+                x: (windowWidth - img.width * scale) / 2,
+                y: (windowHeight - img.height * scale) / 2,
+                rotation: 0,
+            };
+
+            setImages([...images, newImage]);
+
+            // Add the image to the Konva Layer using layerRef
+            const konvaImage = new Konva.Image({
+                image: img,
+                x: (windowWidth - img.width * scale) / 2,
+                y: (windowHeight - img.height * scale) / 2,
+                width: img.width * scale,
+                height: img.height * scale,
+                draggable: true,
+                id: newImage.id.toString(),
+                name: 'image',
+                rotation: newImage.rotation,
+            });
+
+            handleSaveImage(newImage);
+
+            konvaImage.on('click', (e) => {
+                const clickedId = e.target.id();
+                if (selectedId !== clickedId) {
+                    setSelectedId(clickedId);
+                } else {
+                    setSelectedId(null);
+                }
+            });
+
+            konvaImage.on('dragend', (e) => {
+                handleImageChange(newImage.id, {
+                    x: e.target.x(),
+                    y: e.target.y(),
+                });
+            });
+
+            konvaImage.on('transformend', (e) => {
+                const node = layerRef.current.findOne(`#${newImage.id}`);
+                const scaleX = node.scaleX();
+                const scaleY = node.scaleY();
+                const rotation = node.rotation();
+
+                handleImageChange(newImage.id, {
+                    x: node.x(),
+                    y: node.y(),
+                    width: node.width() * scaleX,
+                    height: node.height() * scaleY,
+                    rotation: rotation,
+                });
+            });
+
+            konvaImage.on('transform', (e) => {
+                const node = e.target;
+                const scaleX = node.scaleX();
+                const scaleY = node.scaleY();
+
+                // Prevent negative scaling
+                if (scaleX < 0 || scaleY < 0) {
+                    node.scaleX(Math.max(scaleX, 0.1));
+                    node.scaleY(Math.max(scaleY, 0.1));
+                }
+            });
+
+            const transformer = new Konva.Transformer({
+                node: konvaImage,
+            });
+
+            layerRef.current.add(konvaImage);
+            layerRef.current.add(transformer);
+            layerRef.current.batchDraw();
+        };
+    }
+
     const handleMouseMove = (e: any) => {
         if (!isDrawing) {
             return;
@@ -283,15 +378,26 @@ const Editor = () => {
     const updateLocalState = (data: any) => {
         console.log('Data updated');
         console.log(data);
-        const diff = _.difference(data?.lines, lines);
+        const imagesList = Object.keys(data?.images).map((key) => data?.images[key]);
+        console.log(imagesList);
+        const linesDiff = _.difference(data?.lines, lines);
+        const imageDiff = _.difference(imagesList, images);
         if (!data?.lines?.length) {
             layerRef?.current?.destroyChildren();
         }
+        if (!data?.images?.length) {
+            layerRef?.current?.destroyChildren();
+        }
         // layerRef?.current?.destroyChildren();
-        for (let line of diff) {
+        for (let line of linesDiff) {
             handleAddLine(line);
         }
+        for (let image of imageDiff) {
+            handleAddImage(image);
+        }
         setLines(data?.lines ? data?.lines : []);
+        // var result = Object.keys(data?.images).map((key) => data?.images[key]);
+        setImages(imagesList ? imagesList : []);
         if (data?.canvasBgColor) {
             ToolStateStore.setCanvasBgColor(parseColor(data?.canvasBgColor));
         }
