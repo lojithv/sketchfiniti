@@ -75,6 +75,8 @@ const Editor = () => {
 
     const [project, setProject] = useState<any>(null);
 
+    const [selectedId, setSelectedId] = useState<any>(null);
+
     const handleMouseDown = (e: any) => {
         if (e.evt.which === 2) {
             setPrevTool(tool);
@@ -512,13 +514,17 @@ const Editor = () => {
                     scale = Math.min(scaleX, scaleY);
                 }
 
-                setImages([...images, {
+                const newImage = {
+                    id: images.length + 1,
                     image: img,
                     width: img.width * scale,
                     height: img.height * scale,
                     x: (windowWidth - img.width * scale) / 2,
                     y: (windowHeight - img.height * scale) / 2,
-                }]);
+                    rotation: 0,
+                };
+
+                setImages([...images, newImage]);
 
                 // Add the image to the Konva Layer using layerRef
                 const konvaImage = new Konva.Image({
@@ -528,6 +534,52 @@ const Editor = () => {
                     width: img.width * scale,
                     height: img.height * scale,
                     draggable: true,
+                    id: newImage.id.toString(),
+                    name: 'image',
+                    rotation: newImage.rotation,
+                });
+
+                konvaImage.on('click', (e) => {
+                    const clickedId = e.target.id();
+                    if (selectedId !== clickedId) {
+                        setSelectedId(clickedId);
+                    } else {
+                        setSelectedId(null);
+                    }
+                });
+
+                konvaImage.on('dragend', (e) => {
+                    handleImageChange(newImage.id, {
+                        x: e.target.x(),
+                        y: e.target.y(),
+                    });
+                });
+
+                konvaImage.on('transformend', (e) => {
+                    const node = layerRef.current.findOne(`#${newImage.id}`);
+                    const scaleX = node.scaleX();
+                    const scaleY = node.scaleY();
+                    const rotation = node.rotation();
+
+                    handleImageChange(newImage.id, {
+                        x: node.x(),
+                        y: node.y(),
+                        width: node.width() * scaleX,
+                        height: node.height() * scaleY,
+                        rotation: rotation,
+                    });
+                });
+
+                konvaImage.on('transform', (e) => {
+                    const node = e.target;
+                    const scaleX = node.scaleX();
+                    const scaleY = node.scaleY();
+
+                    // Prevent negative scaling
+                    if (scaleX < 0 || scaleY < 0) {
+                        node.scaleX(Math.max(scaleX, 0.1));
+                        node.scaleY(Math.max(scaleY, 0.1));
+                    }
                 });
 
                 const transformer = new Konva.Transformer({
@@ -544,6 +596,30 @@ const Editor = () => {
 
     const handleDragOver = (e: any) => {
         e.preventDefault();
+    };
+
+    const handleImageChange = (id: any, newProps: { x?: number; y?: number; width?: number, height?: number, rotation?: number }) => {
+        console.log('Image changed');
+        console.log(newProps)
+
+        const updatedImages = images.map((image) => {
+            if (image.id === id) {
+                return {
+                    ...image,
+                    ...newProps,
+                };
+            }
+            return image;
+        });
+        setImages(updatedImages);
+
+        // Find the corresponding transformer and update its props
+        const selectedNode = layerRef.current.findOne(`#${id}`);
+        const transformer = layerRef.current.findOne(`Transformer`);
+        if (selectedNode && transformer) {
+            transformer.setNode(selectedNode);
+            layerRef.current.batchDraw();
+        }
     };
 
     return (
