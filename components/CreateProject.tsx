@@ -1,6 +1,6 @@
 import { fstore } from '@/config/firebase-config';
 import { AuthContext } from '@/context/AuthContext';
-import { DialogTrigger, ActionButton, Dialog, Heading, Divider, ButtonGroup, Button, Content, Form, TextField, Checkbox, Provider, defaultTheme } from '@adobe/react-spectrum';
+import { DialogTrigger, ActionButton, Dialog, Heading, Divider, ButtonGroup, Button, Content, Form, TextField, Checkbox, Provider, defaultTheme, Key, Picker, Item } from '@adobe/react-spectrum';
 import { addDoc, collection } from 'firebase/firestore';
 import React, { useContext, useState } from 'react'
 
@@ -10,6 +10,12 @@ const CreateProject = (props: Props) => {
 
     const { isAuthenticated, login, logout, user } = useContext(AuthContext);
     const [projectData, setProjectData] = useState<any>({});
+
+    let options = [
+        { name: 'Infinite Canvas' },
+        { name: 'Notebook' }
+    ];
+    let [projectType, setProjectType] = React.useState<Key>("Infinite Canvas");
 
     const createProject = async () => {
         // Create a new project
@@ -21,6 +27,7 @@ const CreateProject = (props: Props) => {
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 accessibility: 'private',
+                projectType: projectType,
                 // state: null,
             });
 
@@ -62,6 +69,13 @@ const CreateProject = (props: Props) => {
                             <Form>
                                 <TextField label="Name" value={projectData.name} onChange={(v) => setProjectData({ ...projectData, name: v })} />
                                 {/* <Checkbox>Make private</Checkbox> */}
+                                <Picker
+                                    label="Select Project Type"
+                                    items={options}
+                                    selectedKey={projectType}
+                                    onSelectionChange={selected => setProjectType(selected)}>
+                                    {item => <Item key={item.name}>{item.name}</Item>}
+                                </Picker>
                             </Form>
                         </Content>
                     </Dialog>
