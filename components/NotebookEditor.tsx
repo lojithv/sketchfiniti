@@ -54,6 +54,10 @@ const NotebookEditor = () => {
     const stageRef = useRef<any>(null);
     const layerRef = useRef<any>(null);
 
+    const [pages, setPages] = useState<any[]>([1, 2, 3]);
+
+    const pageRefs = useRef<any>(pages.map(() => React.createRef()));
+
     const [lastLineRef, setLastLineRef] = useState<any>(null);
 
     const [lineRefs, setLineRefs] = useState<any[]>([]);
@@ -77,7 +81,10 @@ const NotebookEditor = () => {
 
     const [selectedId, setSelectedId] = useState<any>(null);
 
-    const handleMouseDown = (e: any) => {
+    const A4_WIDTH = 595; // A4 width in pixels
+    const A4_HEIGHT = 842; // A4 height in pixels
+
+    const handleMouseDown = (e: any, i: number) => {
         if (e.evt.which === 2) {
             setPrevTool(tool);
             setTool('pan');
@@ -89,7 +96,7 @@ const NotebookEditor = () => {
             setIsDrawing(false)
             return;
         }
-        const pos = layerRef.current.getRelativePointerPosition();
+        const pos = e.target.getStage().getRelativePointerPosition();
         setLines([...lines, { tool, points: [pos.x, pos.y], color: brushStrokeColor.toString('css'), brushStrokeWidth, eraserStrokeWidth }]);
         const newLine = new Konva.Line({
             stroke: brushStrokeColor.toString('css'),
@@ -104,7 +111,7 @@ const NotebookEditor = () => {
         });
         setLastLineRef(newLine);
         setLineRefs([...lineRefs, newLine]);
-        layerRef.current.add(newLine);
+        pageRefs.current[i].current.add(newLine);
         ToolStateStore.setStateUpdated(true);
     };
 
@@ -224,13 +231,13 @@ const NotebookEditor = () => {
         };
     }
 
-    const handleMouseMove = (e: any) => {
+    const handleMouseMove = (e: any, i: number) => {
         if (!isDrawing) {
             return;
         }
 
         if (tool === "brush" || tool === "eraser") {
-            const point = layerRef.current.getRelativePointerPosition();
+            const point = e.target.getStage().getRelativePointerPosition();
             let lastLine = lines[lines.length - 1];
             if (lastLine) {
                 // add point
@@ -247,7 +254,7 @@ const NotebookEditor = () => {
         }
     };
 
-    const handleMouseUp = (e: any) => {
+    const handleMouseUp = (e: any, i: number) => {
         if (e.evt.which === 2) {
             setTool(prevTool);
         }
@@ -255,7 +262,7 @@ const NotebookEditor = () => {
         ToolStateStore.setStateUpdated(true);
     };
 
-    const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
+    const handleWheelOld = (e: KonvaEventObject<WheelEvent>) => {
         e.evt.preventDefault();
 
         const stage = stageRef.current;
@@ -550,9 +557,9 @@ const NotebookEditor = () => {
     }
 
     useEffect(() => {
-        if (lines?.length > 0 && stateUpdated) {
-            handleSaveProject();
-        }
+        // if (lines?.length > 0 && stateUpdated) {
+        //     handleSaveProject();
+        // }
     }, [stateUpdated])
 
     const handleUndo = () => {
@@ -746,6 +753,44 @@ const NotebookEditor = () => {
         }
     }
 
+    // Calculate center position for A4 sheets
+    const centerPosition = {
+        x: (window.innerWidth - A4_WIDTH) / 2,
+        y: (window.innerHeight - A4_HEIGHT) / 2,
+    };
+
+
+    const calculatePagePosition = (pageIndex: number) => {
+        const pageSpacing = 20; // Spacing between pages
+        const yPos = (pageIndex * (A4_HEIGHT + pageSpacing)) + pageSpacing;
+        return { x: pageSpacing, y: yPos };
+    };
+
+    const handleDragMove = (e: any) => {
+        const newY = e.target.y();
+        e.target.y(Math.min(0, newY)); // Prevent dragging beyond top
+        e.target.y(Math.max(-(A4_HEIGHT + 20) * (pages.length - 1), newY)); // Prevent dragging beyond bottom
+    };
+
+    const handleWheel = (e: any) => {
+        e.evt.preventDefault(); // Prevents default browser scrolling
+        const deltaY = e.evt.deltaY;
+        const stage = stageRef.current;
+        const currentPosition = stage.y();
+        const maxPosition = 50;
+        const minPosition = -(A4_HEIGHT + 20) * (pages.length - 1);
+        let newPosition = currentPosition + deltaY;
+
+        if (newPosition > maxPosition) {
+            newPosition = maxPosition;
+        } else if (newPosition < minPosition) {
+            newPosition = minPosition;
+        }
+
+        stage.y(newPosition);
+        stage.batchDraw();
+    };
+
     return (
         <div
             className="w-screen h-screen relative "
@@ -765,35 +810,40 @@ const NotebookEditor = () => {
                         width={window.innerWidth}
                         height={window.innerHeight}
                         onMouseEnter={() => changeCursor('crosshair')}
-                        onPointerDown={handleMouseDown}
-                        onPointerMove={handleMouseMove}
-                        onMouseup={handleMouseUp}
-                        onWheel={handleWheel}
-                        // onTouchStart={handleMouseDown}
-                        // onTouchMove={handleMouseMove}
-                        onTouchEnd={handleMouseUp}
                         ref={stageRef}
-
+                        onWheel={handleWheel}
                         scaleX={scale}
                         scaleY={scale}
                         className="stage"
+                        y={50}
                         style={{ backgroundColor: canvasBgColor.toString('css') }}
                         draggable={tool === "pan" ? true : false}
+                        onDragMove={handleDragMove}
+                        dragBoundFunc={(pos) => ({ x: 0, y: pos.y })}
                     >
-                        <Layer
-                            ref={layerRef}
-                            className="layer"
-                        >
-                            {/* <Rect
-            x={50}
-            y={50}
-            width={100}
-            height={100}
-            fill="red"
-            draggable={true}
-          /> */}
 
-                        </Layer>
+                        {pages.map((page, i) => (
+                            <Layer
+                                key={page.id}
+                                ref={pageRefs.current[i]}
+                                onPointerDown={(e: any) => handleMouseDown(e, i)}
+                                onPointerMove={(e: any) => handleMouseMove(e, i)}
+                                onMouseup={(e: any) => handleMouseUp(e, i)}
+                                // onTouchStart={handleMouseDown}
+                                // onTouchMove={handleMouseMove}
+                                onTouchEnd={(e: any) => handleMouseUp(e, i)}
+                            >
+                                <Rect
+                                    x={centerPosition.x}
+                                    y={calculatePagePosition(i).y}
+                                    width={A4_WIDTH}
+                                    height={A4_HEIGHT}
+                                    fill="white"
+                                    stroke="black"
+                                />
+                            </Layer>
+                        ))}
+
                     </Stage>
                 )}
             </div>
