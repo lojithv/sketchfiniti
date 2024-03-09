@@ -91,7 +91,12 @@ const ProjetcsList = (props: Props) => {
 
     const handleSelectProject = (item: any) => {
         console.log('Select', item);
-        router.push(`/editor?pr=${item}`);
+        const selectedProject = projects.find(p => p.id === item);
+        if (selectedProject && selectedProject.projectType === 'Infinite Canvas') {
+            router.push(`/editor?pr=${item}`);
+        } else if (selectedProject && selectedProject.projectType === 'Notebook') {
+            router.push(`/notebook?pr=${item}`);
+        }
     }
 
     return (
