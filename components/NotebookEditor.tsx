@@ -839,7 +839,6 @@ const NotebookEditor = () => {
                                     width={A4_WIDTH}
                                     height={A4_HEIGHT}
                                     fill="white"
-                                    stroke="black"
                                 />
                             </Layer>
                         ))}
