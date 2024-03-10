@@ -539,7 +539,7 @@ const NotebookEditor = () => {
         try {
             const stateRef = ref(db, 'v1/projects/' + prId + '/drawing');
             const linesData = action == 'clear' ? [] : lines
-            set(stateRef, { lines: linesData, canvasBgColor: canvasBgColor.toString('css') });
+            set(stateRef, { lines: linesData, canvasBgColor: canvasBgColor.toString('css'), pages: pages, images: images });
             ToolStateStore.setStateUpdated(false);
         } catch (error) {
             console.error('Error adding item: ', error);

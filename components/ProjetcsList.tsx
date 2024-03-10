@@ -92,7 +92,7 @@ const ProjetcsList = (props: Props) => {
     const handleSelectProject = (item: any) => {
         console.log('Select', item);
         const selectedProject = projects.find(p => p.id === item);
-        if (selectedProject && selectedProject.projectType === 'Infinite Canvas') {
+        if (selectedProject && (selectedProject.projectType === 'Infinite Canvas' || !selectedProject.projectType)) {
             router.push(`/editor?pr=${item}`);
         } else if (selectedProject && selectedProject.projectType === 'Notebook') {
             router.push(`/notebook?pr=${item}`);
