@@ -5,7 +5,7 @@ import { ToolStateStore } from "@/store/Tools";
 import Toolbar from "@/widgets/Toolbar";
 
 import { KonvaEventObject } from "konva/lib/Node";
-import React, { use, useContext, useEffect, useRef, useState } from "react";
+import React, { use, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Stage, Layer, Rect } from "react-konva";
 
 import Konva from "konva";
@@ -532,7 +532,7 @@ const Editor = () => {
         try {
             const stateRef = ref(db, 'v1/projects/' + prId + '/drawing');
             const linesData = action == 'clear' ? [] : lines
-            set(stateRef, { lines: linesData, canvasBgColor: canvasBgColor.toString('css') });
+            set(stateRef, { lines: linesData, canvasBgColor: canvasBgColor.toString('css'), images: images });
             ToolStateStore.setStateUpdated(false);
         } catch (error) {
             console.error('Error adding item: ', error);
@@ -628,8 +628,9 @@ const Editor = () => {
                     y: (windowHeight - img.height * scale) / 2,
                     rotation: 0,
                 };
-
-                setImages([...images, newImage]);
+                if (newImage) {
+                    setImages([...images, newImage]);
+                }
 
                 // Add the image to the Konva Layer using layerRef
                 const konvaImage = new Konva.Image({
@@ -644,50 +645,10 @@ const Editor = () => {
                     rotation: newImage.rotation,
                 });
 
-                handleSaveImage(newImage);
-
-                konvaImage.on('click', (e) => {
-                    const clickedId = e.target.id();
-                    if (selectedId !== clickedId) {
-                        setSelectedId(clickedId);
-                    } else {
-                        setSelectedId(null);
-                    }
-                });
-
-                konvaImage.on('dragend', (e) => {
-                    handleImageChange(newImage.id, {
-                        x: e.target.x(),
-                        y: e.target.y(),
-                    });
-                });
-
-                konvaImage.on('transformend', (e) => {
-                    const node = layerRef.current.findOne(`#${newImage.id}`);
-                    const scaleX = node.scaleX();
-                    const scaleY = node.scaleY();
-                    const rotation = node.rotation();
-
-                    handleImageChange(newImage.id, {
-                        x: node.x(),
-                        y: node.y(),
-                        width: node.width() * scaleX,
-                        height: node.height() * scaleY,
-                        rotation: rotation,
-                    });
-                });
-
-                konvaImage.on('transform', (e) => {
-                    const node = e.target;
-                    const scaleX = node.scaleX();
-                    const scaleY = node.scaleY();
-
-                    // Prevent negative scaling
-                    if (scaleX < 0 || scaleY < 0) {
-                        node.scaleX(Math.max(scaleX, 0.1));
-                        node.scaleY(Math.max(scaleY, 0.1));
-                    }
-                });
+                konvaImage.on('click', handleClick);
+                konvaImage.on('dragend', handleDragEnd);
+                konvaImage.on('transformend', handleTransformEnd);
+                konvaImage.on('transform', handleTransform);
 
                 const transformer = new Konva.Transformer({
                     node: konvaImage,
@@ -696,6 +657,8 @@ const Editor = () => {
                 layerRef.current.add(konvaImage);
                 layerRef.current.add(transformer);
                 layerRef.current.batchDraw();
+
+                handleSaveImage(newImage);
             };
         };
         reader.readAsDataURL(file);
@@ -705,20 +668,13 @@ const Editor = () => {
         e.preventDefault();
     };
 
-    const handleImageChange = (id: any, newProps: { x?: number; y?: number; width?: number, height?: number, rotation?: number }) => {
-        console.log('Image changed');
-        console.log(newProps)
-
-        const updatedImages = images.map((image) => {
-            if (image.id === id) {
-                return {
-                    ...image,
-                    ...newProps,
-                };
-            }
-            return image;
+    const handleImageChange = useCallback((id: any, newProps: { x?: number; y?: number; width?: number, height?: number, rotation?: number }) => {
+        setImages(prevImages => {
+            console.log(prevImages);
+            return prevImages.map(image =>
+                image.id === id ? { ...image, ...newProps } : image
+            );
         });
-        setImages(updatedImages);
 
         // Find the corresponding transformer and update its props
         const selectedNode = layerRef.current.findOne(`#${id}`);
@@ -727,7 +683,55 @@ const Editor = () => {
             transformer.setNode(selectedNode);
             layerRef.current.batchDraw();
         }
-    };
+        ToolStateStore.setStateUpdated(true);
+    }, [images, setImages]);
+
+    const handleClick = useCallback((e: any) => {
+        const clickedId = e.target.id();
+        if (selectedId !== clickedId) {
+            setSelectedId(clickedId);
+        } else {
+            setSelectedId(null);
+        }
+    }, [selectedId, setSelectedId]);
+
+    const handleDragEnd = useCallback((e: any) => {
+        const node = e.target;
+        handleImageChange(node.id(), {
+            x: node.x(),
+            y: node.y(),
+            width: node.width() * node.scaleX(),
+            height: node.height() * node.scaleY(),
+            rotation: node.rotation(),
+        });
+    }, [handleImageChange]);
+
+    const handleTransformEnd = useCallback((e: any) => {
+        const node = e.target;
+        const scaleX = node.scaleX();
+        const scaleY = node.scaleY();
+        const rotation = node.rotation();
+
+        handleImageChange(node.id(), {
+            x: node.x(),
+            y: node.y(),
+            width: node.width() * scaleX,
+            height: node.height() * scaleY,
+            rotation: rotation,
+        });
+    }, [handleImageChange]);
+
+    const handleTransform = useCallback((e: any) => {
+        const node = e.target;
+        const scaleX = node.scaleX();
+        const scaleY = node.scaleY();
+
+        // Prevent negative scaling
+        if (scaleX < 0 || scaleY < 0) {
+            node.scaleX(Math.max(scaleX, 0.1));
+            node.scaleY(Math.max(scaleY, 0.1));
+        }
+    }, []);
 
     const handleSaveImage = (image: any) => {
         if (!project) {
@@ -735,12 +739,12 @@ const Editor = () => {
         }
         try {
             // const stateRef = ref(db, 'v1/projects/' + prId + '/drawing');
-            const newImageKey = push(child(ref(db), 'v1/projects/' + prId + '/drawing/images')).key;
-            // set(stateRef, { images: images });
-            const updates: any = {};
-            updates['v1/projects/' + prId + '/drawing/images/' + newImageKey] = image;
-            update(ref(db), updates);
-            ToolStateStore.setStateUpdated(false);
+            // const newImageKey = push(child(ref(db), 'v1/projects/' + prId + '/drawing/images')).key;
+            // // set(stateRef, { images: images });
+            // const updates: any = {};
+            // updates['v1/projects/' + prId + '/drawing/images/' + newImageKey] = image;
+            // update(ref(db), updates);
+            ToolStateStore.setStateUpdated(true);
         } catch (error) {
             console.error('Error adding item: ', error);
         }
