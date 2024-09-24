@@ -403,7 +403,7 @@ const Editor = () => {
     }
 
     useEffect(() => {
-        if (user && project.createdBy === user.uid) {
+        if (user && project?.createdBy === user?.uid) {
             for (let unsub of subscriptions) {
                 unsub();
             }
@@ -422,8 +422,10 @@ const Editor = () => {
                 } else {
                     updateLocalState([]);
                 }
-                setSubscriptions([...subscriptions, unsub]);
             });
+            if(unsub){
+                setSubscriptions([...subscriptions, unsub]);
+            }
         }
 
         if (project?.id && prId) {

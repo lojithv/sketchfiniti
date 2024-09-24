@@ -1,7 +1,11 @@
 "use client"
-import NotebookEditor from '@/components/NotebookEditor'
 import { AuthProvider } from '@/context/AuthContext'
+import dynamic from 'next/dynamic';
 import React from 'react'
+
+const NotebookEditor = dynamic(() => import('@/components/NotebookEditor'), {
+    ssr: false,
+  });
 
 type Props = {}
 
