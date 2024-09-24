@@ -83,12 +83,12 @@ const PenPressureCanvas = () => {
 
     return (
         <div className="w-screen h-screen relative overflow-hidden">
-            <canvas
+            {/* <canvas
                 ref={canvasRef}
                 width={window.innerWidth}
                 height={window.innerHeight}
                 style={{ border: '1px solid black' }}
-            />
+            /> */}
         </div>
     );
 };
