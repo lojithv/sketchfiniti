@@ -77,6 +77,8 @@ const Editor = () => {
 
     const [selectedId, setSelectedId] = useState<any>(null);
 
+    const [loading, setLoading] = useState(true);
+
     const handleMouseDown = (e: any) => {
         if (e.evt.which === 2) {
             setPrevTool(tool);
@@ -402,30 +404,35 @@ const Editor = () => {
         }
     }
 
-    useEffect(() => {
-        if (user && project?.createdBy === user?.uid) {
-            for (let unsub of subscriptions) {
-                unsub();
-            }
+    const handleUnsubscribe = () => {
+        for (let unsub of subscriptions) {
+            unsub();
         }
-    }, [subscriptions])
+    }
+
+    useEffect(() => {
+        if (user && project?.createdBy === user?.uid && !loading) {
+            handleUnsubscribe()
+        }
+    }, [loading])
 
     useEffect(() => {
         const detectProjectChanges = () => {
+            console.log('Detecting project changes', prId);
             if (!prId) return;
             const dbRef = ref(db, 'v1/projects/' + prId + '/drawing');
             const unsub = onValue(dbRef, (snapshot) => {
                 console.log('Data updated');
                 const data = snapshot.val();
+                setLoading(false);
                 if (data) {
                     updateLocalState(data);
                 } else {
                     updateLocalState([]);
                 }
             });
-            if(unsub){
-                setSubscriptions([...subscriptions, unsub]);
-            }
+
+            setSubscriptions([...subscriptions, unsub]);
         }
 
         if (project?.id && prId) {
@@ -442,9 +449,7 @@ const Editor = () => {
             }
         }
         return () => {
-            for (let unsub of subscriptions) {
-                unsub();
-            }
+            handleUnsubscribe();
         };
     }, [project])
 
@@ -528,9 +533,11 @@ const Editor = () => {
     }, [brushStrokeWidth, eraserStrokeWidth, tool, enableTools]);
 
     const handleSaveProject = async (action?: string) => {
+        console.log("Saving project");
         if (!project) {
             return;
         }
+        console.log('Saving project');
         try {
             const stateRef = ref(db, 'v1/projects/' + prId + '/drawing');
             const linesData = action == 'clear' ? [] : lines
