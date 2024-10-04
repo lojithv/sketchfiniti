@@ -47,7 +47,7 @@ export default function Navbar() {
         <div className="bg-slate-900 w-full text-slate-50 p-2 flex gap-5 justify-between items-center">
             <div className="font-bold text-lg">
                 <Link href={"/"}>
-                    Prod
+                  Sketchfiniti
                 </Link>
             </div>
             {!isAuthenticated && <div className="flex gap-5">
