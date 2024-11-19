@@ -30,27 +30,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // If the user is authenticated, set the state of the user
         // If the user is not authenticated, set the state of the user to null
         // Set the state of isAuthenticated to true or false
-        getAuth(app).onAuthStateChanged((user) => {
-            console.log(user);
-            if (user && user.uid) {
-                setIsAuthenticated(true);
-                setUser(user);
-                console.log('prId', prId);
-                console.log('currentPage', currentPage);
-                if (currentPage == '/editor' && !prId) {
-                    router.push('/editor?pr=offline');
+
+        if(app){
+            getAuth(app).onAuthStateChanged((user) => {
+                console.log(user);
+                if (user && user.uid) {
+                    setIsAuthenticated(true);
+                    setUser(user);
+                    console.log('prId', prId);
+                    console.log('currentPage', currentPage);
+                    if (currentPage == '/editor' && !prId) {
+                        router.push('/editor?pr=offline');
+                    }
+                } else {
+                    setIsAuthenticated(false);
+                    setUser(null);
+                    console.log('prId', prId);
+                    if (currentPage == '/dashboard') {
+                        // router.push('/');
+                    } else if (currentPage == '/editor' && !prId) {
+                        router.push('/editor?pr=offline');
+                    }
                 }
-            } else {
-                setIsAuthenticated(false);
-                setUser(null);
-                console.log('prId', prId);
-                if (currentPage == '/dashboard') {
-                    // router.push('/');
-                } else if (currentPage == '/editor' && !prId) {
-                    router.push('/editor?pr=offline');
-                }
-            }
-        });
+            });
+        }
     }, []);
 
     // Function to handle login

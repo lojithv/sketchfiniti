@@ -11,12 +11,12 @@ import { getDatabase } from "firebase/database";
 const firebaseConfig = {
     apiKey: "AIzaSyB7H4xc49wXnbZI0d3uhn359YPmqnsqj9w",
     authDomain: "sketchfiniti.firebaseapp.com",
+    databaseURL: "https://sketchfiniti-default-rtdb.firebaseio.com",
     projectId: "sketchfiniti",
     storageBucket: "sketchfiniti.appspot.com",
     messagingSenderId: "12438842631",
     appId: "1:12438842631:web:0755226d882cc1a92c29a2",
-    measurementId: "G-8PD6XSWCX9",
-    databaseURL: 'https://sketchfiniti-default-rtdb.firebaseio.com'
+    measurementId: "G-8PD6XSWCX9"
 };
 
 // Initialize Firebase
